@@ -363,7 +363,7 @@ async function resolveWebBootstrap(): Promise<WebBootstrapResult> {
     : `${resolveDefaultWsOrigin()}/ws`;
 
   if (remoteId) {
-    return { wsUrl };
+    return { wsUrl, restoreSession: false };
   }
 
   try {
@@ -371,19 +371,20 @@ async function resolveWebBootstrap(): Promise<WebBootstrapResult> {
       cache: "no-store",
     });
     if (!response.ok) {
-      return { wsUrl };
+      return { wsUrl, restoreSession: true };
     }
     const serverInfo = (await response.json()) as Partial<ServerRemoteInfo>;
     const workspace = Array.isArray(serverInfo.workspaces) ? serverInfo.workspaces[0] : undefined;
     return {
       wsUrl,
+      restoreSession: true,
       ...(workspace?.path ? { initialWorkspaceAbsPath: workspace.path } : {}),
       ...(workspace?.workspaceIdentity
         ? { initialWorkspaceIdentity: workspace.workspaceIdentity }
         : {}),
     };
   } catch {
-    return { wsUrl };
+    return { wsUrl, restoreSession: true };
   }
 }
 

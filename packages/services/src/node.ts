@@ -2780,3 +2780,21 @@ export async function disposeServiceResourcesAndWait(services: ServiceCollection
     ?.disposeAndWait()
     .catch(() => {});
 }
+
+export {
+  createWindowHostControllerRuntime,
+  type ResolvedWindowHostControllerSource,
+  type WindowHostControllerSourceScope,
+  type WindowHostControllerRuntime,
+} from "./window-controller/windowHostControllerService.js";
+export {
+  createWindowHostControllerProjection,
+  type WindowHostControllerMutation,
+  type WindowHostControllerMutationResult,
+  type WindowHostControllerSessionOverlay,
+} from "./window-controller/windowHostControllerProjection.js";
+export {
+  createWindowHostSessionsIndexObserver,
+  type WindowHostSessionsIndexObserver,
+} from "./window-controller/windowHostSessionsIndexObserver.js";
+
