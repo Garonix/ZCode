@@ -8,7 +8,6 @@ import {
   TID_TASK_SETTINGS_BUTTON,
 } from "@zcode/shared";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import {
@@ -27,12 +26,10 @@ import {
 import {
   PencilRuler,
   Globe,
-  Loader2,
   LogOut,
   Maximize,
   Palette,
   Settings,
-  User,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
@@ -76,11 +73,6 @@ function getSidebarProfileBadge(
   return formatMessage({ id: "sidebar.profile.notLoggedIn" });
 }
 
-function getAvatarFallbackText(user: UserInfo | null | undefined): string {
-  const source = user?.displayName?.trim() || user?.username?.trim() || "Z";
-  return source[0]?.toUpperCase() ?? "Z";
-}
-
 export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterComponent({
   theme,
   localeMenuValue,
@@ -88,8 +80,8 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onThemeChange,
   onSettingsButtonClick,
   onUsageClick,
-  onUpgradeClick,
-  onLogin,
+  onUpgradeClick: _onUpgradeClick,
+  onLogin: _onLogin,
   onLogout,
   settingsButtonMode = "settings",
   user,
@@ -127,45 +119,21 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   const zoomInShortcutLabel = useShortcutCommandLabel("zoomIn");
   const zoomOutShortcutLabel = useShortcutCommandLabel("zoomOut");
   const resetZoomShortcutLabel = useShortcutCommandLabel("resetZoom");
-  const isRestoringOAuthSession = useZCodeStore((state) => state.isRestoringOAuthSession);
   const profileBadge = getSidebarProfileBadge(user, intl.formatMessage);
-  const avatarFallbackText = getAvatarFallbackText(user);
-  const avatarKey = user?.avatarUrl ?? user?.id ?? "guest";
-  const showAuthRestoreLoading = !user && isRestoringOAuthSession;
   const usageSummaryState = useWorkspaceSidebarFooterUsageSummaryState({
     enabled: true,
     workspaceIdentity,
     workspacePath,
   });
   const profileContent = (
-    <>
-      <Avatar key={avatarKey} size="default">
-        {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={profileBadge} /> : null}
-        <AvatarFallback className="bg-background text-foreground">
-          {user ? (
-            avatarFallbackText
-          ) : showAuthRestoreLoading ? (
-            <>
-              {/* OAuth 启动恢复未落定前，footer 之前会直接显示未登录头像，
-                  用户很容易把“还在校验”误判成“已经退出”。
-                  这里用 loading 图标明确表达“状态确认中”，等恢复成功或失败后再展示最终状态。 */}
-              <Loader2 className="size-4 animate-spin" />
-              <span className="sr-only">{intl.formatMessage({ id: "common.loading" })}</span>
-            </>
-          ) : (
-            <User className="size-4" />
-          )}
-        </AvatarFallback>
-      </Avatar>
-      <div className="min-w-0 flex-1 overflow-hidden text-left">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate text-ui-base font-semibold text-foreground">
-            {profileBadge}
-          </span>
-          {user ? <WorkspaceSidebarFooterPlanBadge state={usageSummaryState} /> : null}
-        </div>
+    <div className="min-w-0 flex-1 overflow-hidden text-left">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span className="min-w-0 truncate text-ui-base font-semibold text-foreground">
+          {profileBadge}
+        </span>
+        {user ? <WorkspaceSidebarFooterPlanBadge state={usageSummaryState} /> : null}
       </div>
-    </>
+    </div>
   );
   const settingsButtonLabel =
     settingsButtonMode === "back"
@@ -216,18 +184,14 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
       <div className="flex min-w-0 gap-2">
         <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <DropdownMenuTrigger asChild>
-            {/* 头像和 Login 之前直接绑定到登录动作，导致用户无法从这里打开偏好设置。
-              现在把这一块改成统一的设置菜单入口，登录/退出留在菜单项里，交互职责更清晰。 */}
             <Button
               type="button"
               variant="ghost"
               size={"lg"}
-              className="min-w-0 flex-1 justify-start gap-2 overflow-hidden rounded-tl-2xl rounded-bl-2xl border-0 pl-0"
+              className="min-w-0 flex-1 justify-start gap-2 overflow-hidden rounded-lg border-0 px-2"
               data-testid={TID_LOGIN_TRIGGER}
               aria-label={profileBadge}
             >
-              {/* Button 默认 shrink-0 且带 whitespace-nowrap，超长用户名会把 footer 撑出 sidebar。
-                这里让触发按钮和文本列都允许收缩，并只在用户名自身做单行截断。 */}
               {profileContent}
             </Button>
           </DropdownMenuTrigger>
@@ -344,7 +308,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
             <WorkspaceSidebarFooterUsageSummaryContent
               state={usageSummaryState}
               onUsageClick={usageButtonClick}
-              onUpgradeClick={onUpgradeClick}
+              onUpgradeClick={_onUpgradeClick}
             />
             {onLogout ? (
               <>
