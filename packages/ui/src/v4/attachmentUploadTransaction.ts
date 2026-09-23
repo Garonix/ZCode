@@ -1,5 +1,5 @@
 import { BufferWriter, serialize } from "@zcode/rpc";
-import { ServiceChannels } from "@zcode/shared";
+import { ServiceChannels, sha256HexAsync } from "@zcode/shared";
 import {
   PROTOCOL_V4_LIMITS,
   type V4AttachmentBeginResult,
@@ -87,12 +87,7 @@ function encodeBase64(bytes: Uint8Array): string {
 }
 
 async function checksum(bytes: Uint8Array): Promise<string> {
-  if (!globalThis.crypto?.subtle) throw new Error("fault.attachment.checksumUnavailable");
-  // WebCrypto 的 BufferSource 要求 ArrayBuffer；复制也避免调用期间底层 view 被复用。
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer);
-  const hex = [...new Uint8Array(digest)]
-    .map((value) => value.toString(16).padStart(2, "0"))
-    .join("");
+  const hex = await sha256HexAsync(bytes);
   return `sha256:${hex}`;
 }
 

@@ -3,7 +3,7 @@ import { resolveZCodeRuntimeEnv } from "@zcode/shared";
 type EffectiveNodeEnv = "development" | "production";
 
 function resolveEffectiveNodeEnv(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {},
 ): EffectiveNodeEnv {
   const runtimeEnv = resolveZCodeRuntimeEnv(env);
   // NODE_ENV 是用户 shell 和 Node 生态都会使用的通用变量，不能作为 ZCode 运行时判据。
@@ -13,7 +13,7 @@ function resolveEffectiveNodeEnv(
 }
 
 export function isEffectiveDevelopmentNodeEnv(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {},
 ): boolean {
   return resolveEffectiveNodeEnv(env) === "development";
 }

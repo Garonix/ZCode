@@ -725,6 +725,29 @@ export function InlineEditableProviderCard({
     [onAddPersonalModel, provider.providerId, runSaveOperation],
   );
 
+  const handleAddModels = useCallback(
+    async (newModels: ProviderSettingsFormModel[]) => {
+      if (!onAddPersonalModel) throw new Error("当前设置入口未装配 Personal Model 添加能力");
+      if (newModels.length === 0) return;
+      await runSaveOperation(
+        async () => {
+          for (const model of newModels) {
+            const added = { ...model, modelId: model.modelId.trim(), hasPersonalConfig: true };
+            if (!added.modelId) continue;
+            await onAddPersonalModel(
+              provider.providerId,
+              added.modelId,
+              structuredClone(added.personalConfig),
+              added.useRecommendedConfig,
+            );
+          }
+        },
+        {},
+      );
+    },
+    [onAddPersonalModel, provider.providerId, runSaveOperation],
+  );
+
   const handleReorderModelIds = useCallback(
     (modelIds: string[]) => {
       if (!onReorderModelIds) return;
@@ -846,12 +869,16 @@ export function InlineEditableProviderCard({
           providerName={getProviderFormLabel(provider)}
           providerEnabled={provider.enabled}
           providerAccess={provider.config.access}
+          baseUrl={baseUrlValue}
+          apiKey={apiKeyValue}
+          apiType={apiFormat}
           models={models}
           onTestModel={onTestModel ? handleTestModel : undefined}
           onModelCommit={handleModelCommit}
           onModelEnabledChange={handleModelEnabledChange}
           onDeleteModel={handleDeleteModel}
           onAddModel={handleAddModel}
+          onAddModels={handleAddModels}
           onReorderModelIds={onReorderModelIds ? handleReorderModelIds : undefined}
           settingsRevision={settingsRevision ?? 0}
         />

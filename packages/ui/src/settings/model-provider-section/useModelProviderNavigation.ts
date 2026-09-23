@@ -178,40 +178,47 @@ export function useModelProviderNavigation({
   );
 
   const navigationGroups = useMemo<ModelProviderNavGroup[]>(() => {
+    const presetItems = [
+      ...presetProviders.map(({ id, displayName, provider }) => {
+        const statusProvider = resolvePresetFamilyStatusProvider({
+          presetId: id,
+          provider,
+          connectionModeItems: connectionModeCodingPlanItems,
+          connectionSelections,
+          modelProviders,
+        });
+        return {
+          key: createPresetProviderNodeKey(id),
+          type: "preset" as const,
+          presetId: id,
+          label: displayName,
+          logo: modelProviders.find(
+            (candidate) =>
+              candidate.providerId ===
+              resolveModelProviderFamilySpecByProviderId(id)?.individualCodingPlanProviderId,
+          )?.config.logo,
+          provider,
+          displayName,
+          statusProvider,
+          statusActive: statusProvider?.executable === true,
+        };
+      }),
+      ...codingPlanItems.filter((item) => isStartPlanModelProviderId(item.presetId)),
+    ];
+
+    // 依据第一性原理：只保留自定义 LLM，若无预置平台，则完全不展示 preset 导航栏
     const groups: ModelProviderNavGroup[] = [
+      ...(presetItems.length > 0
+        ? [
+            {
+              id: "preset" as const,
+              title: intl.formatMessage({ id: "settings.modelProvider.presetTitle" }),
+              items: presetItems,
+            },
+          ]
+        : []),
       {
-        id: "preset",
-        title: intl.formatMessage({ id: "settings.modelProvider.presetTitle" }),
-        items: [
-          ...presetProviders.map(({ id, displayName, provider }) => {
-            const statusProvider = resolvePresetFamilyStatusProvider({
-              presetId: id,
-              provider,
-              connectionModeItems: connectionModeCodingPlanItems,
-              connectionSelections,
-              modelProviders,
-            });
-            return {
-              key: createPresetProviderNodeKey(id),
-              type: "preset" as const,
-              presetId: id,
-              label: displayName,
-              logo: modelProviders.find(
-                (candidate) =>
-                  candidate.providerId ===
-                  resolveModelProviderFamilySpecByProviderId(id)?.individualCodingPlanProviderId,
-              )?.config.logo,
-              provider,
-              displayName,
-              statusProvider,
-              statusActive: statusProvider?.executable === true,
-            };
-          }),
-          ...codingPlanItems.filter((item) => isStartPlanModelProviderId(item.presetId)),
-        ],
-      },
-      {
-        id: "custom",
+        id: "custom" as const,
         title: intl.formatMessage({ id: "settings.modelProvider.customTitle" }),
         items: customProviders.map((provider) => ({
           key: createCustomProviderNodeKey(provider.providerId),

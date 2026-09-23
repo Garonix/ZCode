@@ -87,11 +87,16 @@ export function ProviderTemplatePicker({
       </div>
 
       <div className="space-y-6">
-        {groups.map((group) => (
-          <section key={group.id} data-provider-template-group={group.id} className="space-y-3">
-            <h3 className="text-ui-base font-medium text-foreground-subtle">
-              {intl.formatMessage({ id: `settings.modelProvider.templateGroup.${group.id}` })}
-            </h3>
+        {groups.map((group) => {
+          // 依据第一性原理：只保留自定义 LLM，若无智谱模板则跳过空分组标题
+          if (group.templates.length === 0 && group.id !== "other") {
+            return null;
+          }
+          return (
+            <section key={group.id} data-provider-template-group={group.id} className="space-y-3">
+              <h3 className="text-ui-base font-medium text-foreground-subtle">
+                {intl.formatMessage({ id: `settings.modelProvider.templateGroup.${group.id}` })}
+              </h3>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {group.id === "other" ? (
                 <ProviderTemplateCard
@@ -125,9 +130,10 @@ export function ProviderTemplatePicker({
                   />
                 );
               })}
-            </div>
-          </section>
-        ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </section>
   );
