@@ -323,13 +323,11 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex shrink-0 items-center gap-1.5">
-          {isDesktop && workspacePath ? (
-            <WorkspaceWebRemoteControlTrigger
-              workspacePath={workspacePath}
-              workspaceIdentity={workspaceIdentity}
-              compact
-            />
-          ) : null}
+          <WorkspaceWebRemoteControlTrigger
+            workspacePath={workspacePath ?? ""}
+            workspaceIdentity={workspaceIdentity}
+            compact
+          />
           <ControlHintTooltip title={settingsButtonLabel}>
             <Button
               type="button"
