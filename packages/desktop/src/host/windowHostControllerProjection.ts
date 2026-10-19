@@ -4,4 +4,5 @@ export {
   type WindowHostControllerMutationResult,
   type WindowHostControllerSessionOverlay,
   type WindowHostControllerSourceScope,
+  type WindowHostControllerTaskMembership,
 } from "@zcode/services/node";

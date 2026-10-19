@@ -9,6 +9,7 @@ export {
   type WindowHostControllerMutation,
   type WindowHostControllerMutationResult,
   type WindowHostControllerSessionOverlay,
+  type WindowHostControllerTaskMembership,
 } from "@zcode/services/node";
 export {
   createWindowHostSessionsIndexObserver,

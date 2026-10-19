@@ -230,7 +230,7 @@ export function createWorkflowFacade(deps: CreateWorkflowFacadeDeps): WorkflowFa
       : `/workflow ${definition.kind} ${task}`;
 
   const switchWorkflowToYolo = (): void => {
-    if (deps.runtime.getMode() !== "yolo") {
+    if (deps.runtime.getMode() !== "yolo" && deps.runtime.getMode() !== "guarded") {
       deps.runtime.updateConfig({ mode: "yolo" });
     }
   };
@@ -285,8 +285,11 @@ function createWorkflowChildRuntime(
     {
       ...deps.runtimeConfig,
       agentName: options.workflowKind === "expert" ? "zcode-expert" : "zcode-workflow",
+      // workflow child 不在 Guarded 合同内；只隔离父任务模式，不继承审批。
       mode: "yolo",
       modelSelection: deps.runtime.getSessionModelSelection(),
+      // 父 Shell 在首条输入才解析，不能继承 app 创建时尚未初始化的静态配置。
+      bashShellSelection: deps.runtime.getSessionShellSelection(),
       parentSessionId: deps.sessionId,
       taskType: "workflow_child",
       workingDirectory: deps.workingDirectory,

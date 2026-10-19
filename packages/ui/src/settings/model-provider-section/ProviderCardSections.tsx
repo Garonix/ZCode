@@ -22,7 +22,7 @@ import {
   TID_MODEL_PROVIDER_NAME_EDIT_BUTTON,
   TID_MODEL_PROVIDER_NAME_INPUT,
   testId,
-} from "@zcode/shared";
+} from "@zcode/shared/test-ids";
 import {
   InfoIcon,
   LockKeyholeIcon,
@@ -53,6 +53,7 @@ import { ProviderModelMetadataDialog } from "@/settings/model-provider-section/P
 import { FetchRemoteModelsDialog } from "@/settings/model-provider-section/FetchRemoteModelsDialog.js";
 import { useProviderDetailFeedback } from "@/settings/model-provider-section/ProviderDetailFeedback.js";
 import {
+  PROVIDER_CONNECTION_API_FORMATS,
   ProviderApiFormatSelect,
   resolveProviderConnectionApiFormatDisplayLabel,
 } from "@/settings/model-provider-section/ProviderApiFormatSelect.js";
@@ -61,13 +62,19 @@ import { useProviderModelDraft } from "@/settings/model-provider-section/useProv
 import { ProviderLogo } from "@/settings/model-provider-section/ProviderLogo.js";
 import type { ProviderConfigObject } from "@zcode/provider";
 
-export { formatModelContextWindowLabel } from "@/lib/tokenNumberFormat.js";
 export {
   resolveProviderConnectionApiFormatDisplayLabel,
   resolveProviderConnectionApiFormatOptions,
 } from "@/settings/model-provider-section/ProviderApiFormatSelect.js";
+export { formatModelContextWindowLabel } from "@/lib/tokenNumberFormat.js";
 
-function shouldShowProviderApiFormat(
+export function resolveProviderApiFormatOptions(
+  _provider: Pick<ProviderSettingsFormProvider, "config" | "models">,
+): ProviderApiType[] {
+  return [...PROVIDER_CONNECTION_API_FORMATS];
+}
+
+export function shouldShowProviderApiFormat(
   _provider: Pick<ProviderSettingsFormProvider, "providerId">,
 ): boolean {
   return true;
