@@ -13,6 +13,40 @@
 
 ZCode is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code.
 
+## 🌟 Custom Features & Modifications
+
+This repository is a customized fork based on upstream **ZCode**, adhering to "First Principles" to create a pure, privacy-focused, and Bring-Your-Own-Key (BYOK) AI coding workbench. Key enhancements include:
+
+### 1. 🛡️ Complete Telemetry Blocking & Privacy (Zero-Telemetry)
+- **Blocked APM & Data Warehouse Telemetry**: Removed default Alibaba Cloud ARMS RUM monitoring and telemetry tracking endpoints; all telemetry destinations are zeroed out and blocked.
+- **Disabled Background Auto-Update**: Removed silent background update polling and downloading to give users full control over their software versions.
+- **Physical CI Sanitization**: Pinned zero-telemetry environment variables during GitHub Actions packaging to guarantee distributed binaries are completely free of tracking.
+
+### 2. 🧼 De-commercialization & Clean UI
+- **Removed Proprietary Commercial Upsells**: Eliminated BigModel / Z.ai Coding Plan and Start Plan promotion cards, discount badges, and subscription dialogs.
+- **Removed Mandatory Account System**: Stripped cloud login center, user avatars, and promotional links; fully functional offline and in private environments without a Zhipu account.
+- **Pure Custom LLM Settings**: Removed the "Zhipu (BigModel)" preset group from model settings, **retaining only Custom Providers** for a pure, neutral LLM client experience.
+- **Sidebar Responsive Layout Fix**: Resolved an issue where the model settings navigation shrank into a 32px squished square on certain window sizes, restoring full-width labels.
+
+### 3. ⚡ Enhanced Custom LLM Capabilities (BYOK)
+- **One-Click Model Discovery (Fetch Models)**: Added a "Fetch Models" feature in custom provider settings to automatically detect and batch-import models from any OpenAI-compatible Base URL.
+- **Simplified Model Trigger**: Streamlined the chat input model selector, removing unnecessary provider prefixes for a clean, single-line display.
+
+### 4. 🤖 Independent Bot Channels & Streamlined Remote Control
+- **Promoted Bot Channels to First-Class Entry**: Elevates WeChat, Feishu, Lark, and Telegram IM bot configurations directly to the top-level menu for workspace interaction via favorite messaging tools.
+- **Hidden Cloud Relay Mobile Scan**: Hid the unusable phone QR scan card (which relied on upstream cloud relays) and narrowed the modal dialog, eliminating redundant wrappers and titles.
+- **Enabled Web Access**: Unlocked bot channel configurations directly within the Web interface.
+
+### 5. 🌐 Local Network Web Experience & Runtime Improvements
+- **LAN Attachment Upload Fix**: Introduced a pure TypeScript `pureSha256` fallback when browser `crypto.subtle` is unavailable in non-HTTPS local network contexts, completely eliminating upload crashes.
+- **Runtime Sinking**: Sunk window controller runtime into the services layer, supporting cross-session task aggregation and resumption in Web mode.
+
+### 6. 🚀 Multi-Platform Automated CI/CD
+- **Full GitHub Actions Matrix**: Automated multi-platform builds upon pushing version tags (`v*`), producing releases for **Windows (x64)**, **macOS (Apple Silicon arm64)**, and **Linux (x64)**.
+- **Windows CRLF Hash Mismatch Fix**: Addressed Windows Git line-ending normalization issues during bundle verification, ensuring 100% build reliability across all operating systems.
+
+---
+
 ## Updates
 
 - **2026-10-19**: Updated to ZCode v3.16.2.
