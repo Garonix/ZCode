@@ -39,18 +39,12 @@ export function formatModelChangeLabel(
 }
 
 export function formatProviderModelLabel(
-  providerId: string | undefined,
-  providerName: string | undefined,
+  _providerId: string | undefined,
+  _providerName: string | undefined,
   modelName: string,
 ): string {
-  // Z.ai / BigModel 的内置连接名属于产品固定入口，拼进模型文案会重复展示
-  // “Coding Plan”等连接信息；切换提示额外通过 formatModelChangeLabel 标明套餐类型。
-  if (providerId && resolveModelProviderFamilyIdByProviderId(providerId)) {
-    return modelName;
-  }
-
-  const normalizedProviderName = providerName?.trim();
-  return normalizedProviderName ? `${normalizedProviderName}/${modelName}` : modelName;
+  // 只显示模型名称，保持单行整洁，避免工具栏折行或挤压
+  return modelName;
 }
 
 export function resolveV4ModelTriggerLabel({
@@ -113,17 +107,8 @@ export function resolveV4ModelTriggerDisplay({
   }
 
   const modelLabel = selectedItem.name;
-  const normalizedProviderName = providerName?.trim() || providerId;
-  if (
-    !normalizedProviderName ||
-    (providerId && resolveModelProviderFamilyIdByProviderId(providerId))
-  ) {
-    return { fullLabel, modelLabel };
-  }
-
   return {
-    fullLabel,
-    providerPrefix: `${normalizedProviderName}/`,
+    fullLabel: modelLabel,
     modelLabel,
   };
 }

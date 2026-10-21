@@ -281,9 +281,10 @@ function RootInner({
     codingPlanSubscriptionService: services.codingPlanSubscriptionService,
   });
   const [welcomeScreenOpenReason, setWelcomeScreenOpenReason] =
-    useState<WelcomeScreenOpenReason | null>(() =>
-      consumeZcodeJwtInvalidRestartMarker() ? "session-expired" : null,
-    );
+    useState<WelcomeScreenOpenReason | null>(() => {
+      consumeZcodeJwtInvalidRestartMarker();
+      return null;
+    });
   const [providerFamilyDomainMigrationComplete, setProviderFamilyDomainMigrationComplete] =
     useState(false);
   const loginEntryRequest = useZCodeStore((state) => state.loginEntryRequest);
@@ -594,16 +595,8 @@ function RootInner({
           : undefined,
       refreshProviderState,
       readModelSelectionView: readRootModelSelectionView,
-      setLoginEntryOpen: (open) => {
-        setWelcomeScreenOpenReason((currentReason) => {
-          if (open) {
-            return "startup-provider-required";
-          }
-          // JWT 过期提示确认后会先写入 session-expired，随后 provider
-          // 启动门禁以 open=false 收尾。这里若无条件清空，会覆盖重新登录页并回到工作区。
-          // 门禁只能关闭自己拥有的启动登录态，不能清理其它交互来源的 reason。
-          return currentReason === "startup-provider-required" ? null : currentReason;
-        });
+      setLoginEntryOpen: (_open) => {
+        // 旁路化：已移除智谱云端商业化登录中心，不再由 provider 可用性自动切入 WelcomeScreen
       },
     });
   const isResolvingProviderStartupState = shouldResolveProviderStartupState({
@@ -675,7 +668,7 @@ function RootInner({
     setDirectoryBrowserOpen(true);
   }, []);
   const handleReauthenticationRequired = useCallback(() => {
-    setWelcomeScreenOpenReason("session-expired");
+    // 旁路化：凭据过期后不再整屏切入 WelcomeScreen
   }, []);
   const {
     setWorkspaceActionError,
@@ -708,7 +701,7 @@ function RootInner({
     setOAuthError,
     setUser,
     onProviderFamilyDomainClearedAfterLogout: () => {
-      setWelcomeScreenOpenReason("logout-provider-required");
+      // 旁路化：登出后不再强制弹 WelcomeScreen
     },
     userId: user?.id,
     onOpenRemoteConnection: allowRemoteWorkspace ? handleOpenRemoteConnection : undefined,
@@ -1235,9 +1228,7 @@ function RootInner({
     if (!loginEntryRequest) {
       return;
     }
-    // 登录入口已从模态弹窗收敛为 WelcomeScreen。
-    // provider 连接请求仍要先退出首次启动引导语义，避免连接完成后误创建默认 workspace。
-    setWelcomeScreenOpenReason("provider-request");
+    // 旁路化：已移除智谱商业化登录中心，不再切入 WelcomeScreen
   }, [loginEntryRequest]);
 
   // 登录入口不依赖会话；保持引用稳定，避免草稿更新穿透侧栏 memo。
@@ -1479,7 +1470,7 @@ function RootInner({
     onCreateTask: handleCreateTask,
     onOpenWorkspace: handleOpenWorkspace,
     allowOpenWorkspace,
-    onLogin: !user ? handleOpenLoginEntry : undefined,
+    onLogin: undefined,
     onLogout: user ? handleLogout : undefined,
     user,
   };
@@ -1618,7 +1609,7 @@ function RootInner({
                 allowRemoteWorkspace={allowRemoteWorkspace}
                 handleBackFromSettings={handleBackFromSettings}
                 handleLogout={user ? handleLogout : undefined}
-                onLogin={!user ? handleOpenLoginEntry : undefined}
+                onLogin={undefined}
                 user={user}
                 reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
                 remoteWorkspaceRecoveryByWorkspaceKey={remoteWorkspaceRecoveryByWorkspaceKey}

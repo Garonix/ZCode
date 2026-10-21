@@ -1266,7 +1266,7 @@ const zhCN: Record<string, string> = {
   "sidebar.profile.copyUserId": "点击复制用户 ID",
   "sidebar.profile.userIdCopied": "用户 ID 已复制",
   "sidebar.profile.userIdCopyFailed": "复制失败，请重试",
-  "sidebar.profile.notLoggedIn": "连接使用",
+  "sidebar.profile.notLoggedIn": "工作台",
   "app.selectFile": "选择文件以开始",
   "app.workspace": "工作区",
   "browser.title": "浏览器",
