@@ -32,8 +32,41 @@ env:
   ZCODE_AUTO_UPDATE: "false"
 
 jobs:
+  build-remote-assets:
+    name: Build Remote Server Assets (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare Remote Server Assets
+        run: pnpm prepare:remote-assets:linux
+
+      - name: Upload Remote Assets Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-mock-cdn
+          path: packages/desktop/mock-cdn
+          if-no-files-found: error
+
   build-desktop:
     name: Build Desktop (${{ matrix.target_os }}-${{ matrix.target_arch }})
+    needs: build-remote-assets
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -78,9 +111,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prepare Remote Server Assets (Linux)
-        if: runner.os == 'Linux'
-        run: pnpm prepare:remote-assets:linux
+      - name: Download Remote Assets for Bundling
+        uses: actions/download-artifact@v4
+        with:
+          name: remote-mock-cdn
+          path: packages/desktop/mock-cdn
 
       - name: Build Desktop package
         run: pnpm --filter @zcode/desktop bundle -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
@@ -90,9 +125,6 @@ jobs:
         run: |
           mkdir -p dist-artifacts
           find packages/desktop/dist -maxdepth 1 \( -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) -exec cp {} dist-artifacts/ \;
-          if [ "${{ runner.os }}" = "Linux" ] && [ -d "packages/desktop/mock-cdn/releases" ]; then
-            find packages/desktop/mock-cdn/releases -maxdepth 2 -type f \( -name "*.tar.gz" -o -name "*.json" \) -exec cp {} dist-artifacts/ \;
-          fi
           ls -la dist-artifacts/
 
       - name: Upload artifacts
@@ -104,7 +136,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: build-desktop
+    needs: [build-desktop, build-remote-assets]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -124,6 +156,18 @@ jobs:
           path: release-assets
           pattern: desktop-artifacts-*
           merge-multiple: true
+
+      - name: Download Remote Assets for Release
+        uses: actions/download-artifact@v4
+        with:
+          name: remote-mock-cdn
+          path: downloaded-mock-cdn
+
+      - name: Collect Remote Server Assets
+        shell: bash
+        run: |
+          find downloaded-mock-cdn/releases -maxdepth 2 -type f \( -name "*.tar.gz" -o -name "*.json" \) -exec cp {} release-assets/ \;
+          ls -la release-assets/
 
       - name: Generate Checksums
         shell: bash
