@@ -28,11 +28,18 @@ import {
   ITerminalService,
   IBotsService,
   IProviderProvisioningTargetService,
+  IWindowControllerService,
+  IZCodeTaskService,
 } from "@zcode/services";
+import {
+  createWindowHostControllerRuntime,
+  type WindowHostControllerRuntime,
+} from "@zcode/services/node";
 import {
   botProviders,
   formatLogPrefix,
   formatZodError,
+  isRemoteWorkspaceIdentity,
   remoteTargetSchema,
   SERVER_REMOTE_PROTOCOL_VERSION,
   ZCODE_RPC_HOST_CAPABILITY_HEADER,
@@ -91,6 +98,7 @@ function setupChannelServer(
   services: ServiceCollection,
   clientMode: "desktop-continuous" | "web-remote-replayable",
   resourcePeers?: TopicResourcePeers,
+  controllerRuntime?: WindowHostControllerRuntime,
 ) {
   const socket = wrapWebSocket(ws);
   const protocol = new SocketProtocol(socket);
@@ -110,7 +118,11 @@ function setupChannelServer(
         role: clientMode === "desktop-continuous" ? "trusted-host-relay" : "terminal-client",
       })
     : undefined;
+  const controllerAttachment = controllerRuntime?.createAttachmentService();
   const overrides = new Map<string, unknown>();
+  if (controllerAttachment) {
+    overrides.set(IWindowControllerService.channelName, controllerAttachment);
+  }
   if (connectionScope) {
     overrides.set(IZCodeAgentService.channelName, connectionScope.service);
   }
@@ -128,6 +140,7 @@ function setupChannelServer(
   }
   services.exposeOnChannelServer(server, overrides);
   socket.onClose(() => {
+    controllerAttachment?.dispose();
     peer?.dispose();
     reverseClient?.dispose();
     void connectionScope?.dispose();
@@ -332,13 +345,51 @@ export function createHttpServer(
   app.get("/api/server-info", (c) => c.json(createServerInfo(options)));
   app.post("/api/rpc-host-capability", (c) => c.json(hostCapabilities.issue()));
 
+  const controllerRuntime: WindowHostControllerRuntime = createWindowHostControllerRuntime({
+    createId: randomUUID,
+    onSourceError: (scope, operation, error) => {
+      log(
+        `window Controller source ${operation} failed, scope=${scope.kind}, workspaceKey=${scope.workspaceIdentity?.trim() || scope.workspacePath}`,
+        error,
+      );
+    },
+    resolveSource: (scope) => {
+      // 远程 history scope 未连接或已被移除时，绝不能落回本地 tasks-index。
+      if (scope.workspaceIdentity && isRemoteWorkspaceIdentity(scope.workspaceIdentity)) {
+        return null;
+      }
+      const taskService = services.getOptional(IZCodeTaskService);
+      if (!taskService) {
+        return null;
+      }
+      return {
+        scope: {
+          kind: "local" as const,
+          workspacePath: scope.workspacePath,
+          ...(scope.workspaceIdentity ? { workspaceIdentity: scope.workspaceIdentity } : {}),
+        },
+        taskService,
+        agentService: services.getOptional(IZCodeAgentService),
+        sourceAvailability: "online" as const,
+      };
+    },
+  });
+
+  services.register(IWindowControllerService, controllerRuntime.service);
+
   // 普通 `/ws` 永远是 terminal-client；浏览器/任意客户端设置旧 mode header
   // 都不能再把自己提升为 trusted host。
   app.get(
     "/ws",
     upgradeWebSocket(() => ({
       onOpen(_event, ws) {
-        setupChannelServer(ws.raw as WebSocket, services, "web-remote-replayable");
+        setupChannelServer(
+          ws.raw as WebSocket,
+          services,
+          "web-remote-replayable",
+          undefined,
+          controllerRuntime,
+        );
       },
     })),
   );
@@ -350,6 +401,7 @@ export function createHttpServer(
         services,
         "desktop-continuous",
         options.topicResourcePeers,
+        controllerRuntime,
       );
     },
   }));
