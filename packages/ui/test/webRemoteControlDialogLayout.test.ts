@@ -257,7 +257,7 @@ describe("WebRemoteControlDialog layout", () => {
     expect(pollReuseIndex).toBeGreaterThan(-1);
   });
 
-  it("uses Remote Connect width without forcing the lighter dialog to full height", () => {
+  it("uses compact dialog width without forcing the lighter dialog to full height", () => {
     const html = renderToStaticMarkup(
       createElement(WebRemoteControlDialog, {
         open: true,
@@ -267,7 +267,7 @@ describe("WebRemoteControlDialog layout", () => {
     );
 
     expect(html).toContain("max-h-[calc(100vh-6rem)]");
-    expect(html).toContain("max-w-4xl");
+    expect(html).toContain("max-w-lg");
     expect(html).toContain("overflow-hidden");
     expect(html).toContain('data-testid="web-remote-control-dialog-scroll"');
     expect(html).not.toContain('class="h-[calc(100vh-6rem)]');
