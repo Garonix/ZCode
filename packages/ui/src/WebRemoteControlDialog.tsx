@@ -357,12 +357,14 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
             remoteSessionId,
             error: message,
           });
-          toast(
-            intl.formatMessage(
-              { id: "webRemoteControl.startFailed" },
-              { error: message },
-            ),
-          );
+          if (!message.toLowerCase().includes("desktop") && !message.toLowerCase().includes("relay")) {
+            toast(
+              intl.formatMessage(
+                { id: "webRemoteControl.startFailed" },
+                { error: message },
+              ),
+            );
+          }
         }
         logger.error("[WebRemoteControlDialog] 启动 Web 远程控制失败", {
           workspacePath,
@@ -665,11 +667,11 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
 
             <div
               data-testid="web-remote-control-main-grid"
-              className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1.45fr)_minmax(300px,1fr)]"
+              className="mt-5 grid gap-4 grid-cols-1 max-w-xl mx-auto"
             >
               <section
                 data-testid="web-remote-control-scan-card"
-                className="flex min-h-[360px] flex-col rounded-xl border border-border bg-card p-4"
+                className="hidden flex min-h-[360px] flex-col rounded-xl border border-border bg-card p-4"
               >
                 <div className="mb-4 flex items-start gap-2">
                   <Smartphone className="mt-0.5 size-4 shrink-0 text-foreground-subtle" />
