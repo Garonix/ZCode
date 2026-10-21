@@ -1,0 +1,28 @@
+services:
+  zcode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zcode:latest
+    container_name: zcode
+    restart: unless-stopped
+    ports:
+      # 宿主机端口映射（默认 3030，可通过 HOST_PORT=xxx 覆盖）
+      - "${HOST_PORT:-3030}:3030"
+    environment:
+      - PORT=3030
+      - HOST=0.0.0.0
+      - ZCODE_DATA_BASE_DIR=/data
+      - ZCODE_SERVER_WORKSPACE=/workspace
+      # 可选：如需开启 Web 端 Token/密码访问认证，可取消以下注释并设置自定义 Token
+      # - ZCODE_SERVER_AUTH_TOKEN=your-secret-token
+    volumes:
+      # 持久化存储数据卷：包含应用配置、历史会话以及内置 SQLite 数据库文件
+      - zcode-data:/data
+      # 工作区挂载：映射宿主机本地代码目录供 AI 编程工作台读写（默认当前目录下的 ./workspace）
+      - ./workspace:/workspace
+
+volumes:
+  # 用于持久化 SQLite 数据库和配置文件的独立命名卷
+  zcode-data:
+    driver: local
