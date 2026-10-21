@@ -53,7 +53,11 @@ export function ModelProviderSectionLayout({
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-ui-base leading-6 text-foreground-subtle">{description}</p>
+        {description ? (
+          <p className="text-ui-base leading-6 text-foreground-subtle">{description}</p>
+        ) : (
+          <div />
+        )}
         <SettingsResourceHeaderActions
           onRefresh={onRefresh}
           onNew={onAddProvider}

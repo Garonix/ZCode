@@ -104,7 +104,7 @@ export function FetchRemoteModelsDialog({
           <DialogTitle>
             {intl.formatMessage({ id: "settings.modelProvider.fetchRemoteModels.dialogTitle" })}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="sr-only">
             {intl.formatMessage({ id: "settings.modelProvider.fetchRemoteModels.dialogDesc" })}
           </DialogDescription>
         </DialogHeader>

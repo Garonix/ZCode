@@ -13,46 +13,26 @@
 
 ZCode is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code.
 
-## 🌟 Custom Features & Modifications
+## Custom Features
 
-This repository is a customized fork based on upstream **ZCode**, adhering to "First Principles" to create a pure, privacy-focused, and Bring-Your-Own-Key (BYOK) AI coding workbench. Key enhancements include:
+This repository is maintained on top of the open-source codebase, applying first-principles engineering to provide a clean, private, and distraction-free AI coding workspace:
 
-### 1. 🛡️ Complete Telemetry Blocking & Privacy (Zero-Telemetry)
-- **Blocked APM & Data Warehouse Telemetry**: Removed default Alibaba Cloud ARMS RUM monitoring and telemetry tracking endpoints; all telemetry destinations are zeroed out and blocked.
-- **Disabled Background Auto-Update**: Removed silent background update polling and downloading to give users full control over their software versions.
-- **Physical CI Sanitization**: Pinned zero-telemetry environment variables during GitHub Actions packaging to guarantee distributed binaries are completely free of tracking.
-
-### 2. 🧼 De-commercialization & Clean UI
-- **Removed Proprietary Commercial Upsells**: Eliminated BigModel / Z.ai Coding Plan and Start Plan promotion cards, discount badges, and subscription dialogs.
-- **Removed Mandatory Account System**: Stripped cloud login center, user avatars, and promotional links; fully functional offline and in private environments without a Zhipu account.
-- **Pure Custom LLM Settings**: Removed the "Zhipu (BigModel)" preset group from model settings, **retaining only Custom Providers** for a pure, neutral LLM client experience.
-- **Sidebar Responsive Layout Fix**: Resolved an issue where the model settings navigation shrank into a 32px squished square on certain window sizes, restoring full-width labels.
-
-### 3. ⚡ Enhanced Custom LLM Capabilities (BYOK)
-- **One-Click Model Discovery (Fetch Models)**: Added a "Fetch Models" feature in custom provider settings to automatically detect and batch-import models from any OpenAI-compatible Base URL.
-- **Simplified Model Trigger**: Streamlined the chat input model selector, removing unnecessary provider prefixes for a clean, single-line display.
-
-### 4. 🤖 Independent Bot Channels & Streamlined Remote Control
-- **Promoted Bot Channels to First-Class Entry**: Elevates WeChat, Feishu, Lark, and Telegram IM bot configurations directly to the top-level menu for workspace interaction via favorite messaging tools.
-- **Hidden Cloud Relay Mobile Scan**: Hid the unusable phone QR scan card (which relied on upstream cloud relays) and narrowed the modal dialog, eliminating redundant wrappers and titles.
-- **Enabled Web Access**: Unlocked bot channel configurations directly within the Web interface.
-
-### 5. 🌐 Local Network Web Experience & Runtime Improvements
-- **LAN Attachment Upload Fix**: Introduced a pure TypeScript `pureSha256` fallback when browser `crypto.subtle` is unavailable in non-HTTPS local network contexts, completely eliminating upload crashes.
-- **Runtime Sinking**: Sunk window controller runtime into the services layer, supporting cross-session task aggregation and resumption in Web mode.
-
-### 6. 🚀 Multi-Platform Automated CI/CD
-- **Full GitHub Actions Matrix**: Automated multi-platform builds upon pushing version tags (`v*`), producing releases for **Windows (x64)**, **macOS (Apple Silicon arm64)**, and **Linux (x64)**.
-- **Windows CRLF Hash Mismatch Fix**: Addressed Windows Git line-ending normalization issues during bundle verification, ensuring 100% build reliability across all operating systems.
+- **Privacy & Zero-Telemetry**: Removed APM monitoring, tracking endpoints, and forced background auto-updates; pinned zero-telemetry environment variables across all CI builds.
+- **De-commercialized & Noise-Free UI**: Stripped proprietary promotions, cloud login requirements, and instructional subtitles; eliminated redundant controls for zero cognitive overhead.
+- **Universal LLM Support (BYOK)**: Dedicated to custom OpenAI-compatible providers, with automatic remote model detection and batch import.
+- **Independent Bot Channels**: Native support for WeChat, Feishu, Lark, and Telegram bot integrations across Desktop and Web.
+- **Self-Contained Remote SSH**: Built-in Linux remote assets dispatched directly through the SSH connection pipe, decoupling from external CDNs or intranet placeholders.
+- **Local Network & Web Hardening**: Standard SHA-256 fallback ensures reliable file uploads in non-HTTPS environments; controller runtime sunk to services layer for multi-session resumption.
+- **Automated CI/CD**: One-click multi-platform builds for Windows (x64), macOS (arm64), and Linux (x64).
 
 ---
 
 ## Updates
 
-- **2026-10-19**: Updated to ZCode v3.16.2.
-- **2026-10-16**: Updated to ZCode v3.16.1.
-- 2026-10-10: Updated to ZCode v3.15.1.
-- 2026-9-23: Updated to ZCode v3.14.3.
+- **2026-10-21**: Released v3.16.2 custom edition with self-contained SSH deployment, UI noise reduction, and model discovery.
+- **2026-10-19**: Synced baseline to upstream ZCode v3.16.2.
+- **2026-10-16**: Synced baseline to upstream ZCode v3.16.1.
+- **2026-09-23**: Synced baseline to upstream ZCode v3.14.3.
 
 ## Setup
 
