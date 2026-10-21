@@ -11,7 +11,6 @@ import {
   Bot as BotIcon,
   CopyIcon,
   LoaderCircle,
-  MonitorSmartphone,
   RefreshCw,
   Smartphone,
   Unplug,
@@ -652,7 +651,7 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
             <DialogHeader className="space-y-2 pr-8">
               <div className="flex items-center gap-2">
                 <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-surface text-primary">
-                  <MonitorSmartphone className="size-5" />
+                  <BotIcon className="size-5" />
                 </div>
                 <div className="space-y-1">
                   <DialogTitle>
