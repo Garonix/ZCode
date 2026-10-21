@@ -371,6 +371,36 @@ describe("desktopRuntimeEnv resolveRemoteAssetDirs", () => {
     expect(dirs.remoteCacheDir).toMatch(/[\\/]userData[\\/]remote-assets-cache$/);
   });
 
+  it("打包态在 resources 目录下包含 mock-cdn 资源时应识别为本地 mockCdnDir", async () => {
+    appMock.isPackaged = true;
+    process.env["ZCODE_DEV_REMOTE_ASSET_USE_CDN"] = "0";
+    const fakeResources = join(tmpdir(), "zcode-bundled-resources-" + Math.random().toString(36).slice(2));
+    const fakeMockCdn = join(fakeResources, "mock-cdn");
+    const fakeRelease = join(fakeMockCdn, "releases", "0.0.0-test");
+    mkdirSync(fakeRelease, { recursive: true });
+    writeFileSync(join(fakeRelease, "source-server-descriptor.json"), "{}");
+    const oldResourcesPath = (process as unknown as { resourcesPath?: string }).resourcesPath;
+    (process as unknown as { resourcesPath: string }).resourcesPath = fakeResources;
+
+    try {
+      const { resolveRemoteAssetDirs } = await import("../src/main/desktopRuntimeEnv.js");
+      const dirs = resolveRemoteAssetDirs({
+        locale: "zh-CN",
+        timeZone: "Asia/Shanghai",
+        version: "0.0.0-test",
+      });
+
+      expect(dirs.mockCdnDir).toBe(fakeMockCdn);
+    } finally {
+      if (oldResourcesPath !== undefined) {
+        (process as unknown as { resourcesPath: string }).resourcesPath = oldResourcesPath;
+      } else {
+        delete (process as unknown as { resourcesPath?: string }).resourcesPath;
+      }
+      rmSync(fakeResources, { recursive: true, force: true });
+    }
+  });
+
   it("remote asset cache 目录支持环境变量覆盖", async () => {
     const overrideCacheDir = join(tmpdir(), "zcode-prod-remote-assets-cache");
     process.env["ZCODE_REMOTE_ASSET_CACHE_DIR"] = overrideCacheDir;

@@ -26,6 +26,7 @@ permissions:
 
 env:
   NODE_OPTIONS: "--max-old-space-size=8192"
+  ZCODE_ENV: "production"
   ZCODE_ARMS_RUM_ENDPOINT: ""
   ZCODE_TELEMETRY_REPORT_ENDPOINT: ""
   ZCODE_AUTO_UPDATE: "false"
@@ -77,6 +78,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare Remote Server Assets (Linux)
+        if: runner.os == 'Linux'
+        run: pnpm prepare:remote-assets:linux
+
       - name: Build Desktop package
         run: pnpm --filter @zcode/desktop bundle -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
 
@@ -85,6 +90,9 @@ jobs:
         run: |
           mkdir -p dist-artifacts
           find packages/desktop/dist -maxdepth 1 \( -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) -exec cp {} dist-artifacts/ \;
+          if [ "${{ runner.os }}" = "Linux" ] && [ -d "packages/desktop/mock-cdn/releases" ]; then
+            find packages/desktop/mock-cdn/releases -maxdepth 2 -type f \( -name "*.tar.gz" -o -name "*.json" \) -exec cp {} dist-artifacts/ \;
+          fi
           ls -la dist-artifacts/
 
       - name: Upload artifacts

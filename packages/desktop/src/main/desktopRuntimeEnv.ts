@@ -230,6 +230,28 @@ function resolveDevelopmentMockCdnDir(): string {
   return join(import.meta.dirname, "../../mock-cdn");
 }
 
+function resolveBundledMockCdnDir(): string | undefined {
+  if (isElectronAppPackaged()) {
+    try {
+      const resourcesPath = (process as unknown as { resourcesPath?: string }).resourcesPath;
+      if (resourcesPath) {
+        const bundledCandidates = [
+          join(resourcesPath, "mock-cdn"),
+          join(resourcesPath, "remote-assets"),
+        ];
+        for (const candidate of bundledCandidates) {
+          if (existsSync(join(candidate, "releases", ZCODE_VERSION, "source-server-descriptor.json"))) {
+            return candidate;
+          }
+        }
+      }
+    } catch {
+      // 容错处理：获取打包资源目录异常时安全忽略
+    }
+  }
+  return undefined;
+}
+
 function resolveAvailableDevelopmentMockCdnDir(): string | undefined {
   const mockCdnDir = resolveDevelopmentMockCdnDir();
   const releaseDir = join(mockCdnDir, "releases", ZCODE_VERSION);
@@ -339,7 +361,9 @@ export function resolveRemoteAssetDirs(
   // 功能开关：开发态默认继续走 mock-cdn，只有显式打开开关才切到公网 CDN。
   // 这样能兼容离线开发场景，同时允许在开发环境提前验证真实 CDN 下载链路。
   if (isElectronAppPackaged() || shouldUseRemoteCdnInDevelopment(localEnv)) {
+    const bundledMockCdnDir = resolveBundledMockCdnDir();
     return {
+      ...(bundledMockCdnDir ? { mockCdnDir: bundledMockCdnDir } : {}),
       remoteCdnBaseUrl,
       remoteCdnBaseUrls,
       remoteCacheDir: resolveRemoteAssetCacheDir(localEnv),

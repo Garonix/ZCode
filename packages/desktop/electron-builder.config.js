@@ -739,6 +739,23 @@ export default {
       from: "build/icon.png",
       to: "icon.png",
     },
+    ...(existsSync(
+      resolve(
+        desktopPackageRoot,
+        "mock-cdn/releases",
+        buildMetadata.appVersion,
+        "source-server-descriptor.json",
+      ),
+    )
+      ? [
+          {
+            // 离线/内网 SSH 部署资源：构建前若已执行 prepare:remote-assets:linux，
+            // 则将其作为内置资源随包发布，使客户端直推部署 100% 具备完全离线自洽能力。
+            from: resolve(desktopPackageRoot, "mock-cdn"),
+            to: "mock-cdn",
+          },
+        ]
+      : []),
     ...(targetPlatform.os === "linux"
       ? [
           {
