@@ -756,9 +756,12 @@ function RootInner({
     supportsSettings,
     isDesktop,
     allowRemoteWorkspace,
-    // conversation backing workspace 只属于本地桌面主恢复链路；远程窗口和手机
-    // shared-host attachment 不能因此创建独立本地 runtime 或改变 replayable 边界。
-    ensureConversationWorkspaceOnRestore: isDesktop && restoreSession && !initialWorkspaceIdentity,
+    // 修复依据：conversation backing workspace 属于本地桌面与 Web 主恢复链路；远程窗口和手机
+    // shared-host attachment（带 initialWorkspaceIdentity）不能因此创建独立本地 runtime 或改变 replayable 边界。
+    // 解除对 isDesktop 的过度限制，使 Web 模式也能在启动恢复时挂载无项目对话工作区，从而在左侧侧边栏正常列出并查询无项目任务。
+    ensureConversationWorkspaceOnRestore: Boolean(
+      restoreSession && !initialWorkspaceIdentity,
+    ),
     deferInactiveWorkspaceRestore: isDesktop && restoreSession && !initialWorkspaceIdentity,
     unavailableWorkspacePath,
     tabStoreApi,

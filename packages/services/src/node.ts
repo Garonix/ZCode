@@ -3258,3 +3258,22 @@ export async function createServerHostServices(options: {
 
 export { scopeConversationShareServiceForAttachment } from "./conversation-share/conversationShareConnectionScope.js";
 export { localRuntimeNetworkCapture } from "./zcode-agent/localRuntimeNetworkCapture.js";
+
+export {
+  createWindowHostControllerRuntime,
+  type ResolvedWindowHostControllerSource,
+  type WindowHostControllerSourceScope,
+  type WindowHostControllerRuntime,
+} from "./window-controller/windowHostControllerService.js";
+export {
+  createWindowHostControllerProjection,
+  type WindowHostControllerMutation,
+  type WindowHostControllerMutationResult,
+  type WindowHostControllerSessionOverlay,
+  type WindowHostControllerTaskMembership,
+} from "./window-controller/windowHostControllerProjection.js";
+export {
+  createWindowHostSessionsIndexObserver,
+  type WindowHostSessionsIndexObserver,
+} from "./window-controller/windowHostSessionsIndexObserver.js";
+
