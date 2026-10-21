@@ -1032,7 +1032,7 @@ const enUS: Record<string, string> = {
   "sidebar.profile.copyUserId": "Click to copy user ID",
   "sidebar.profile.userIdCopied": "User ID copied",
   "sidebar.profile.userIdCopyFailed": "Copy failed. Please try again",
-  "sidebar.profile.notLoggedIn": "Connect",
+  "sidebar.profile.notLoggedIn": "Workspace",
   "app.selectFile": "Select a file to get started",
   "app.workspace": "Workspace",
   "browser.title": "Browser",
