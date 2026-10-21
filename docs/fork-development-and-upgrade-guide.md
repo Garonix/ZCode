@@ -218,3 +218,12 @@ env:
   import { sha256HexAsync } from "@zcode/shared";
   const hex = await sha256HexAsync(bytes);
   ```
+
+### Q4: 升级后模型设置页重新出现了“智谱 / BigModel”预设选项
+* **原因**：官方在版本迭代中可能新增预置套餐或重构预设供应商入口（例如 v3.15.1 引入了 `PRESET_PROVIDER_SPECS` 数组）。如果只清理了旧版的 `CODING_PLAN_PROVIDER_SPECS`，官方新增的预设配置仍会在左侧导航渲染出“智谱”分组与“BigModel”项。
+* **解决**：在 `packages/ui/src/settings/model-provider-section/constants.ts` 中，将预设供应商与厂商套餐常量均置空为 `[]`：
+  ```ts
+  // 依据第一性原理：只保留自定义 LLM，剔除预置的 z.ai 和 bigmodel 专属套餐与账号规范。
+  export const PRESET_PROVIDER_SPECS: PresetProviderSpec[] = [];
+  export const CODING_PLAN_PROVIDER_SPECS: CodingPlanProviderSpec[] = [];
+  ```

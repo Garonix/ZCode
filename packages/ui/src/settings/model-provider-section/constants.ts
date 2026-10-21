@@ -1,12 +1,10 @@
 import {
-  BIGMODEL_PROVIDER_ID,
   buildBigModelApiUrl,
   buildBigModelCodingPlanPersonalManageUrl,
   BUILTIN_MODEL_PROVIDER_IDS,
   createUuid,
   type OAuthProviderId,
   ZCODE_ENV,
-  ZAI_PROVIDER_ID,
   type BuiltinModelProviderId,
   type UsageQuotaLimit,
   type UsageEntitlementSubscriptionDetail,
@@ -31,18 +29,8 @@ export interface PresetProviderSpec {
   oauthProviderId?: OAuthProviderId;
 }
 
-export const PRESET_PROVIDER_SPECS: PresetProviderSpec[] = [
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan,
-    displayName: "Z.ai",
-    oauthProviderId: ZAI_PROVIDER_ID,
-  },
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,
-    displayName: "BigModel",
-    oauthProviderId: BIGMODEL_PROVIDER_ID,
-  },
-];
+// 依据第一性原理：只保留自定义 LLM，剔除预置的 z.ai 和 bigmodel 专属套餐与账号规范。
+export const PRESET_PROVIDER_SPECS: PresetProviderSpec[] = [];
 
 export const PRESET_PROVIDER_SPEC_BY_ID = new Map<BuiltinModelProviderId, PresetProviderSpec>(
   PRESET_PROVIDER_SPECS.map((item) => [item.id, item]),
