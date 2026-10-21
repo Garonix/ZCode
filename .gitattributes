@@ -14,3 +14,6 @@ third-party/runtime/*.txt -text -whitespace
 docs/knip/docs/LICENSE -text -whitespace
 docs/knip/docs/licenses/** -text -whitespace
 third-party/inventory.json linguist-generated=true
+
+# Vendor 静态运行时资源必须按二进制精确存储，避免 Windows autocrlf 导致哈希校验失败
+apps/zcode-cli/packages/visualize-plugin/skills/visualize/assets/** -text

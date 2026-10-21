@@ -49,6 +49,10 @@ jobs:
             target_arch: x64
 
     steps:
+      - name: Disable Git autocrlf on Windows
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
