@@ -24,7 +24,7 @@ export function createServiceLogger(
     isDebugEnabled?: boolean | (() => boolean);
   },
 ): ServiceLogger {
-  const pid = options?.pid ?? process.pid;
+  const pid = options?.pid ?? (typeof process !== "undefined" ? process.pid : undefined);
   const sink = options?.sink ?? console;
   const debugOption = options?.isDebugEnabled;
   const resolveDebugEnabled: () => boolean =
