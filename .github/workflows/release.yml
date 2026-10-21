@@ -26,6 +26,9 @@ permissions:
 
 env:
   NODE_OPTIONS: "--max-old-space-size=8192"
+  ZCODE_ARMS_RUM_ENDPOINT: ""
+  ZCODE_TELEMETRY_REPORT_ENDPOINT: ""
+  ZCODE_AUTO_UPDATE: "false"
 
 jobs:
   build-desktop:

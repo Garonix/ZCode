@@ -106,12 +106,6 @@ export function resolveBuildPackagedAgentTelemetryEnv(
     runtimeEnv.ZCODE_PACKAGED_AGENT_OTEL_SERVICE_NAME?.trim() || "zcode-cli-agent";
 
   if (!endpoint && !headers) {
-    if (
-      runtimeEnv.CI &&
-      (runtimeEnv.CI_COMMIT_TAG || runtimeEnv.CI_COMMIT_BRANCH === "release/current")
-    ) {
-      throw new Error("Packaged Agent OTLP configuration is required for release builds");
-    }
     return {};
   }
   if (!endpoint || !headers) {

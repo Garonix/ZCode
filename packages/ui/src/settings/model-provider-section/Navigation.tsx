@@ -113,7 +113,7 @@ function ModelProviderNavigationButton({
           }
           onSelectNavItem(item);
         }}
-        className={`relative box-border flex h-8 w-full items-center gap-2 rounded-lg border px-2 py-1 text-left text-ui-base font-medium transition-colors max-md:size-8 max-md:justify-center max-md:gap-0 max-md:px-0 ${
+        className={`relative box-border flex h-8 w-full items-center gap-2 rounded-lg border px-2 py-1 text-left text-ui-base font-medium transition-colors ${
           isSelected
             ? "border-border-hover bg-card-selected text-foreground"
             : inactiveItemClassName
@@ -124,7 +124,7 @@ function ModelProviderNavigationButton({
         ) : showIcon ? (
           <span className="shrink-0 text-current">{renderModelProviderNavIcon(item)}</span>
         ) : null}
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 max-md:sr-only">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <span className="min-w-0 truncate">{label}</span>
         </span>
         {"provider" in item ? (
@@ -195,7 +195,7 @@ function SortableModelProviderNavigationButton({
         {...attributes}
         {...listeners}
         onKeyDown={handleKeyDown}
-        className={`relative box-border flex h-8 w-full cursor-grab touch-pan-y select-none items-center gap-2 rounded-lg border px-2 py-1 text-left text-ui-base font-medium transition-colors active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 max-md:size-8 max-md:justify-center max-md:gap-0 max-md:px-0 ${
+        className={`relative box-border flex h-8 w-full cursor-grab touch-pan-y select-none items-center gap-2 rounded-lg border px-2 py-1 text-left text-ui-base font-medium transition-colors active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
           isSelected
             ? "border-border-hover bg-card-selected text-foreground"
             : inactiveItemClassName
@@ -204,7 +204,7 @@ function SortableModelProviderNavigationButton({
         <span className="shrink-0 text-current" aria-hidden="true">
           {renderModelProviderNavIcon(item)}
         </span>
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 max-md:sr-only">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <span className="min-w-0 truncate">{label}</span>
         </span>
         {"provider" in item ? (
@@ -227,7 +227,7 @@ function PresetProviderCardNavigation({
   onSelectNavItem: (item: ModelProviderNavItem) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 max-md:items-center max-md:gap-1">
+    <div className="flex flex-col gap-2">
       {group.items.map((item) => (
         <ModelProviderNavigationButton
           key={item.key}
@@ -305,7 +305,7 @@ function SortableProviderNavigationGroup({
         items={[...optimisticOrder.renderedIds]}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex flex-col gap-1 max-md:items-center">
+        <div className="flex flex-col gap-1">
           {renderedItems.map((item) => {
             const providerId = getSortableProviderId(item, reorderableProviderIds);
             if (!providerId) {
@@ -384,13 +384,13 @@ export function ModelProviderSectionNavigation({
   );
 
   return (
-    <aside className="px-1.5 py-3 md:py-2 md:px-2">
-      <div className="flex min-h-0 flex-col gap-3 max-md:gap-1">
+    <aside className="px-2 py-2">
+      <div className="flex min-h-0 flex-col gap-3">
         {navigationGroups
           .filter((group) => group.id !== "custom" || group.items.length > 0)
           .map((group) => (
-            <div key={group.id} className="flex flex-col gap-2 max-md:gap-1">
-              <div className="flex h-7 items-center justify-between px-2 py-1 max-md:hidden">
+            <div key={group.id} className="flex flex-col gap-2">
+              <div className="flex h-7 items-center justify-between px-2 py-1">
                 <h3 className="text-ui-sm font-semibold text-foreground-subtlest">{group.title}</h3>
                 {shouldShowModelProviderGroupLoadingIndicator({
                   groupId: group.id,
