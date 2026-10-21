@@ -227,3 +227,10 @@ env:
   export const PRESET_PROVIDER_SPECS: PresetProviderSpec[] = [];
   export const CODING_PLAN_PROVIDER_SPECS: CodingPlanProviderSpec[] = [];
   ```
+
+### Q5: Windows CI 构建报错 `Error: Gen UI vendor hash mismatch`
+* **原因**：Windows 环境下 Git 默认启用 `core.autocrlf = true`，在检出 JavaScript 资源文件时会自动将 LF 换行转为 CRLF（`\r\n`），导致 `gen-ui-runtime-assets.mjs` 计算出的 SHA256 哈希值与 manifest.json 中的基线不符。
+* **解决**：采用三重防护机制：
+  1. 在 `.gitattributes` 中声明静态 Vendor 资源为 `-text` 二进制存储，禁止自动换行转换。
+  2. 在 GitHub Actions 流水线中检出代码前全局关闭 `core.autocrlf`。
+  3. 在 `gen-ui-runtime-assets.mjs` 中增加换行符归一化回退容错，确保即便遇到 CRLF 也能自动去除 `\r` 恢复正规哈希并写回标准字节。
