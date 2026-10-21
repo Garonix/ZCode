@@ -54,6 +54,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      // 开启局域网监听，允许外部设备访问 5173 开发端口
+      host: true,
+      allowedHosts: true,
       port: 5173,
       proxy: {
         // Web 登录本地调试时，OAuth token 交换必须先命中线上同源接口。
@@ -69,9 +72,19 @@ export default defineConfig(({ mode }) => {
       },
     },
     optimizeDeps: {
-      // 修复：在依赖预构建阶段显式加入 react 相关入口，避免 rolldown 解析 `react/jsx-runtime`
-      // / `react/jsx-dev-runtime` 时返回无后缀路径导致的加载失败（UNLOADABLE_DEPENDENCY）。
-      include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      // 修复：在依赖预构建阶段显式加入 react/react-dom 及其 client/jsx 相关入口和基础库，
+      // 避免浏览器首屏加载时发现新依赖触发重新预构建导致 504 (Outdated Optimize Dep)。
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "lucide-react",
+        "clsx",
+        "tailwind-merge",
+        "@pierre/diffs",
+      ],
     },
     worker: {
       rollupOptions: {

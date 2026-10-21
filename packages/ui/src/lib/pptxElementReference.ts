@@ -1,4 +1,5 @@
 import type { PresentationPageElement } from "@/presentation/types.js";
+import { sha256HexAsync } from "@zcode/shared";
 
 export const PPTX_ELEMENT_REFERENCE_ADD_TO_CHAT_EVENT =
   "zcode:pptx-element-reference-add-to-chat";
@@ -167,10 +168,7 @@ export async function sha256Fingerprint(
     typeof value === "string"
       ? new TextEncoder().encode(value)
       : new Uint8Array(value);
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
-  const hex = [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+  const hex = await sha256HexAsync(bytes);
   return `sha256:${hex}`;
 }
 

@@ -19,6 +19,12 @@ import {
 import { createServiceDescriptor } from "../descriptors.js";
 import type { ModelConnectivityResult } from "@zcode/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
+import type {
+  FetchRemoteModelsInput,
+  FetchRemoteModelsResult,
+} from "./remoteModelDiscovery.js";
+
+export type { FetchRemoteModelsInput, FetchRemoteModelsResult };
 
 export type {
   ProviderSettingsProviderView,
@@ -68,6 +74,8 @@ export interface IProviderSettingsService {
   testModelConnectivity(
     input: ProviderSettingsConnectivityRequest,
   ): Promise<ModelConnectivityResult>;
+  /** 探测远端提供商公开的模型列表（OpenAI/Ollama/Anthropic 兼容格式） */
+  fetchRemoteModels(input: FetchRemoteModelsInput): Promise<FetchRemoteModelsResult>;
 }
 
 export const IProviderSettingsService = createServiceDescriptor<IProviderSettingsService>(
@@ -205,6 +213,10 @@ export function createProviderSettingsService(
         providerId: input.providerId,
         modelId: input.modelId,
       });
+    },
+    fetchRemoteModels: async (input) => {
+      const { fetchRemoteProviderModels } = await import("./remoteModelDiscovery.js");
+      return fetchRemoteProviderModels(input);
     },
   };
 }
