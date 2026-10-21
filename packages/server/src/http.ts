@@ -35,12 +35,8 @@ import {
 import {
   botProviders,
   formatLogPrefix,
-  botProviders,
-  formatLogPrefix,
   serverRemoteInfoOutputSchema,
-  formatZodError,
   isRemoteWorkspaceIdentity,
-  remoteTargetSchema,
   SERVER_REMOTE_PROTOCOL_VERSION,
   ZCODE_RPC_HOST_CAPABILITY_HEADER,
   ZCODE_COMPATIBILITY_MANIFEST,

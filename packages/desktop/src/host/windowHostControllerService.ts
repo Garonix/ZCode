@@ -1,5 +1,6 @@
 export {
-  createWindowHostControllerService,
-  type WindowHostControllerService,
-  type WindowHostControllerServiceOptions,
+  createWindowHostControllerRuntime,
+  type ResolvedWindowHostControllerSource,
+  type WindowHostControllerRuntime,
+  type WindowHostControllerSourceScope,
 } from "@zcode/services/node";

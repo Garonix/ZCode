@@ -15,11 +15,11 @@ import type {
   WindowHostControllerFrame,
   WindowHostControllerTaskListItem,
   WindowHostControllerTaskListResult,
+  WindowHostTaskUnreadSignal,
 } from "./windowController.js";
 import type { IZCodeAgentService } from "#src/zcode-agent/zcodeAgent.js";
 import type { IZCodeTaskService } from "#src/session/zcodeTaskService.js";
 import type {
-  WindowHostTaskUnreadSignal,
   ZCodeTaskListQuery,
   ZCodeTaskListWorkspaceScope,
 } from "#src/session/zcodeTaskListTypes.js";
