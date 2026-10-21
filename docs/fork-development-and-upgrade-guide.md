@@ -140,7 +140,65 @@ git cherry-pick <first-custom-commit-hash>^..<last-custom-commit-hash>
 
 ---
 
-## 六、 避坑与故障排查清单（FAQ）
+## 六、 上游升级必查：反遥测与隐私安全审计（Zero-Telemetry Checklist）
+
+> **安全原则**：智谱官方存在在版本演进中增设监控、遥测和隐蔽数据上报的先例。**不要相信文档或注释承诺，必须逐行审计代码。**
+
+每次同步官方最新 Tag 并 Cherry-pick 完成后，**必须强制执行反遥测合规排查**：
+
+### 1. 官方既有 4 大遥测链路及其拦截原理
+
+| 遥测链路 | 官方代码位置 | 正常情况下的表现 | 官方可能搞的动作（必查项） |
+| :--- | :--- | :--- | :--- |
+| **ARMS RUM (阿里云监控)** | `packages/desktop/src/main/appARMSBootstrap.ts`<br>`packages/desktop/src/shared/armsRumShared.ts` | `ZCODE_ARMS_RUM_ENDPOINT` 为空时，SDK 以 `enable: false` 初始化，不上报 | 检查官方是否在 `packages/shared/src/env.ts` 中给宏赋默认非空地址 |
+| **数仓事件埋点 (Product Telemetry)** | `packages/services/src/telemetry/telemetryCore.ts` | `REPORT_ENDPOINT` 为空时，`sendReport` 第 419 行直接 `return` 阻断 | 检查官方是否新增绕过 `REPORT_ENDPOINT` 判空的旁路上报代码 |
+| **Agent OTLP 链路** | `packages/desktop/tsup.config.ts`<br>`resolveBuildPackagedAgentTelemetryEnv` | 无环境变量时返回空对象 `{}`，Agent 不携带 OTLP Exporter | 检查官方是否强行要求 release 构建带 OTLP，或写入硬编码的 traces 端点 |
+| **桌面自动更新轮询** | `packages/desktop/src/main/autoUpdater.ts` | `ZCODE_AUTO_UPDATE_ENABLED` 为 `false` 时完全不启动更新定时器 | 检查官方是否引入强制自检或隐式静默下载逻辑 |
+
+---
+
+### 2. 升级后反遥测快速审计命令集（直接复制执行）
+
+#### 检查项 A：环境变量与默认端点是否全置空
+```bash
+# 检查 env.ts 中默认值是否为空字符串（绝不能出现任何 url）
+git grep -n "ZCODE_ARMS_RUM_ENDPOINT\|ZCODE_TELEMETRY_REPORT_ENDPOINT" packages/shared/src/env.ts
+# 正确结果：两项默认值必须皆为 ""
+```
+
+#### 检查项 B：排查是否潜伏私有配置
+```bash
+# 确保开源版本中不存在官方私有构建配置文件
+ls config/private/build-defaults.json 2>/dev/null && echo "⚠️ 警告：检测到私有配置！" || echo "✅ 安全：无私有配置"
+```
+
+#### 检查项 C：排查敏感域名与打点 SDK
+```bash
+# 扫描是否有新引入的外部埋点/分析平台（除必要文档与内网测试用例之外）
+git grep -E -i "sentry|mixpanel|sensorsdata|growingio|umeng" packages/ apps/
+```
+
+#### 检查项 D：排查非模型调用的外部网络请求
+```bash
+# 过滤排查业务层中是否有新增的未审查 fetch / net.request 外部上报
+git grep -n "fetch(" packages/services/src/ packages/desktop/src/main/ | grep -v "test"
+```
+
+---
+
+### 3. CI 构建的物理防御层
+在 `.github/workflows/release.yml` 的全局 `env` 中已经配置了防御环境变量：
+```yaml
+env:
+  ZCODE_ARMS_RUM_ENDPOINT: ""
+  ZCODE_TELEMETRY_REPORT_ENDPOINT: ""
+  ZCODE_AUTO_UPDATE: "false"
+```
+无论官方构建脚本如何修改，GitHub Actions 打包出的安装包都会通过这层物理变量将所有遥测地址冲刷为空。
+
+---
+
+## 七、 避坑与故障排查清单（FAQ）
 
 ### Q1: `pnpm typecheck` 报错 `JavaScript heap out of memory` (Exit Code 134)
 * **原因**：Monorepo 内含 14 个包，全量 `tsc -b` 内存消耗超出了 Node 默认的 2GB 上限。

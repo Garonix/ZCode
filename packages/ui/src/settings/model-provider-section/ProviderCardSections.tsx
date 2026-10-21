@@ -611,34 +611,32 @@ export function ProviderModelsSection({
         <span className="text-ui-base text-foreground-subtle">
           {intl.formatMessage({ id: "settings.modelProvider.models" })}
         </span>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            size="default"
-            className="rounded-lg"
-            onClick={handleFetchRemoteModels}
-            disabled={isFetchingModels}
-          >
-            {isFetchingModels ? (
-              <Loader2Icon className="animate-spin" data-icon="inline-start" aria-hidden="true" />
-            ) : (
-              <RefreshCw data-icon="inline-start" aria-hidden="true" />
-            )}
-            {intl.formatMessage({ id: "settings.modelProvider.fetchRemoteModels" })}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="default"
-            className="rounded-lg"
-            data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
-            onClick={openAddDialog}
-          >
-            <Plus data-icon="inline-start" aria-hidden="true" />
-            {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="default"
+          className="rounded-lg ml-auto"
+          onClick={handleFetchRemoteModels}
+          disabled={isFetchingModels}
+        >
+          {isFetchingModels ? (
+            <Loader2Icon className="animate-spin" data-icon="inline-start" aria-hidden="true" />
+          ) : (
+            <RefreshCw data-icon="inline-start" aria-hidden="true" />
+          )}
+          {intl.formatMessage({ id: "settings.modelProvider.fetchRemoteModels" })}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="default"
+          className="rounded-lg"
+          data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
+          onClick={openAddDialog}
+        >
+          <Plus data-icon="inline-start" aria-hidden="true" />
+          {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
+        </Button>
       </div>
       {models.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-input-border bg-input">
