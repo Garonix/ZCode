@@ -29,9 +29,20 @@ async function resolvePushBase(root, head, remote) {
 }
 
 async function firstPushBase(root, head) {
-  // 首次推送没有 remote SHA；只使用已确认的集成分支，缺失时严格报错，不猜测其他分支。
-  const staging = await commit(root, "origin/staging");
-  return (await git(root, ["merge-base", staging, head])).toString().trim();
+  // 首次推送没有 remote SHA；优先使用 origin/staging，若不存在（如开源 fork 仓库）则回退到 origin/main 或 upstream/main
+  let baseBranch;
+  for (const candidate of ["origin/staging", "origin/main", "upstream/main"]) {
+    try {
+      baseBranch = await commit(root, candidate);
+      break;
+    } catch {
+      // 尝试下一个候选分支
+    }
+  }
+  if (!baseBranch) {
+    throw new Error("无法解析首次推送的基线分支（尝试了 origin/staging, origin/main, upstream/main）");
+  }
+  return (await git(root, ["merge-base", baseBranch, head])).toString().trim();
 }
 
 /** 只解析比较基线；改动文件与关联测试全部由 Vitest 官方选择。 */
