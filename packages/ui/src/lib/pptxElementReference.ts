@@ -1,5 +1,5 @@
 import type { PresentationPageElement } from "@/presentation/types.js";
-import { sha256HexAsync } from "@zcode/shared";
+import { createUuid, sha256HexAsync } from "@zcode/shared";
 
 export const PPTX_ELEMENT_REFERENCE_ADD_TO_CHAT_EVENT =
   "zcode:pptx-element-reference-add-to-chat";
@@ -155,10 +155,8 @@ export function isPptxElementReferencePayload(
 }
 
 export function createPptxElementReferenceId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `pptx-element-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // 修复原因：内网非安全上下文（HTTP）下原生 crypto.randomUUID 不可用，使用兼容环境的 createUuid
+  return createUuid();
 }
 
 export async function sha256Fingerprint(

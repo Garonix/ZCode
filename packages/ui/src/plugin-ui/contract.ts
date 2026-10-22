@@ -6,6 +6,7 @@ import type {
   PluginUiScopeRef,
 } from "@zcode/shared/mcp-apps";
 import { buildPluginSandboxScopeId } from "@zcode/shared/mcp-apps";
+import { createUuid } from "@zcode/shared";
 import type { AttachmentRef, ConversationInputSource } from "@zcode/shared/zcode-protocol-v4";
 import type { ReactNode } from "react";
 import type { PluginUiImageBlock } from "./domain/pluginUiImageBlocks.js";
@@ -254,7 +255,8 @@ export interface PluginUiResourceNotificationTarget {
 
 /** 文档查看器手动入口创建独立窗口；工具调用继续使用原有的显式 surface 路由。 */
 export function documentViewerInstance(resourceUri: string): { instanceId?: string } {
+  // 修复原因：内网非安全上下文（HTTP）下原生 crypto.randomUUID 不可用，使用兼容环境的 createUuid
   return /^ui:\/\/(documents|pdf|presentations|spreadsheets)\/panel\.html$/.test(resourceUri)
-    ? { instanceId: crypto.randomUUID() }
+    ? { instanceId: createUuid() }
     : {};
 }

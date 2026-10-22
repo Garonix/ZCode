@@ -1,4 +1,26 @@
-import { mobilePluginDiscoveryTelemetrySchema } from "@zcode/shared";
+import { createUuid, mobilePluginDiscoveryTelemetrySchema } from "@zcode/shared";
+
+// 修复原因：当通过内网 IP（如 http://192.168.x.x:5175/）访问 Web 版时，浏览器处于非安全上下文，
+// 原生 crypto.randomUUID 不可用，调用会导致 TypeError: crypto.randomUUID is not a function。
+// 此处统一为 globalThis.crypto 挂载 createUuid 作为 polyfill，确保所有生成 ID 的调用均能安全执行。
+if (typeof globalThis !== "undefined") {
+  const runtimeCrypto = globalThis.crypto;
+  if (!runtimeCrypto) {
+    (globalThis as unknown as { crypto: unknown }).crypto = {
+      randomUUID: () => createUuid(),
+    };
+  } else if (typeof runtimeCrypto.randomUUID !== "function") {
+    try {
+      Object.defineProperty(runtimeCrypto, "randomUUID", {
+        value: () => createUuid(),
+        configurable: true,
+        writable: true,
+      });
+    } catch {
+      (runtimeCrypto as unknown as { randomUUID: () => string }).randomUUID = () => createUuid();
+    }
+  }
+}
 import {
   sessionCreateTelemetrySchema,
   type RendererTelemetryEventPayload,

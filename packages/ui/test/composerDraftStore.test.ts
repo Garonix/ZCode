@@ -379,4 +379,22 @@ describe("Composer Draft 持久选择", () => {
     expect(() => read()).not.toThrow();
     expect(read()).toBeNull();
   });
+
+  it("非安全上下文（无 crypto.randomUUID）下准备新任务草稿仍能成功分配合法 UUID", () => {
+    const originalRandomUuid = globalThis.crypto?.randomUUID;
+    try {
+      // 模拟内网 HTTP 等非安全上下文环境
+      if (globalThis.crypto) {
+        // @ts-expect-error 模拟未暴露 randomUUID 的非安全环境
+        delete globalThis.crypto.randomUUID;
+      }
+      const draft = ensurePendingTaskDraft({ clientNamespace: "web", hostId: "local" });
+      expect(draft.draftId).toBeDefined();
+      expect(draft.draftId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    } finally {
+      if (originalRandomUuid && globalThis.crypto) {
+        globalThis.crypto.randomUUID = originalRandomUuid;
+      }
+    }
+  });
 });

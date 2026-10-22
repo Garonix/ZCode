@@ -1,3 +1,4 @@
+import { createUuid } from "@zcode/shared";
 import type {
   PptxCodeViewerSource,
   PptxReferencePreviewNavigation,
@@ -17,10 +18,8 @@ export interface PptxElementReferencePreviewScope {
 function createPptxReferencePreviewNavigation(
   reference: PptxElementReference,
 ): PptxReferencePreviewNavigation {
-  const requestId =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `pptx-preview-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // 修复原因：内网非安全上下文（HTTP）下原生 crypto.randomUUID 不可用，使用兼容环境的 createUuid
+  const requestId = createUuid();
   return {
     requestId,
     pageIndex: reference.slideIndex,

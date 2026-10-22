@@ -8,6 +8,7 @@ import type {
 import {
   RENDERER_ACTION_TRACE_MAX_BATCH_BYTES,
   RENDERER_ACTION_TRACE_MAX_BATCH_SPANS,
+  createUuid,
 } from "@zcode/shared";
 import {
   resolveUserActionCatalogEntry,
@@ -128,8 +129,9 @@ export class RendererUserActionTelemetry implements UserActionTelemetry {
       return NOOP_ACTION_HANDLE;
     }
 
+    // 修复原因：内网非安全上下文（HTTP）下原生 crypto.randomUUID 不可用，使用兼容环境的 createUuid
     const active: ActiveAction = {
-      actionId: crypto.randomUUID(),
+      actionId: createUuid(),
       entry,
       input,
       spanId: this.randomHex(8),

@@ -9,6 +9,7 @@ import {
   MCP_APPS_WIDGET_STATE_CONTEXT_KEY,
   buildPluginSandboxScopeId,
 } from "@zcode/shared/mcp-apps";
+import { createUuid } from "@zcode/shared";
 import { createPluginUiAppTools } from "./pluginUiAppTools.js";
 import {
   installPluginUiHostAppHandlers,
@@ -54,7 +55,8 @@ export function createPluginUiHostController(
   // 进行中的页面工具调用 id，dispose 时逐个取消到 agent。
   const activeCalls = new Set<string>();
   let unregisterNotifications: (() => void) | null = null;
-  const createCallId = deps.createCallId ?? (() => crypto.randomUUID());
+  // 修复原因：内网非安全上下文（HTTP）下原生 crypto.randomUUID 不可用，使用兼容环境的 createUuid
+  const createCallId = deps.createCallId ?? (() => createUuid());
   const setTimer =
     deps.setTimer ??
     ((callback: () => void, ms: number) => {
