@@ -2502,8 +2502,8 @@ const enUS: Record<string, string> = {
   "webRemoteControl.statusTag.ready": "Ready",
   "webRemoteControl.botChannel.title": "Bot Channels",
   "webRemoteControl.botChannel.description": "",
-  "webRemoteControl.botChannel.weixin.title": "WeCom",
-  "webRemoteControl.botChannel.weixin.description": "WeCom",
+  "webRemoteControl.botChannel.weixin.title": "WeChat",
+  "webRemoteControl.botChannel.weixin.description": "WeChat",
   "webRemoteControl.botChannel.feishu.title": "Feishu",
   "webRemoteControl.botChannel.feishu.description": "Feishu",
   "webRemoteControl.botChannel.lark.title": "Lark",
@@ -4404,8 +4404,10 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.modelsEmpty": "No models are configured. Add a model to use it in chat.",
   "settings.modelProvider.addModel": "Add model",
   "settings.modelProvider.fetchRemoteModels": "Fetch Models",
-  "settings.modelProvider.fetchRemoteModels.emptyBaseUrl": "Base URL cannot be empty. Please enter it first.",
-  "settings.modelProvider.fetchRemoteModels.noModels": "No available models detected from this endpoint.",
+  "settings.modelProvider.fetchRemoteModels.emptyBaseUrl":
+    "Base URL cannot be empty. Please enter it first.",
+  "settings.modelProvider.fetchRemoteModels.noModels":
+    "No available models detected from this endpoint.",
   "settings.modelProvider.fetchRemoteModels.dialogTitle": "Import Models",
   "settings.modelProvider.fetchRemoteModels.dialogDesc": "",
   "settings.modelProvider.fetchRemoteModels.searchPlaceholder": "Search models",

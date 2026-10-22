@@ -20,12 +20,15 @@ async function main(): Promise<void> {
   const authToken = process.env["ZCODE_SERVER_AUTH_TOKEN"]?.trim() || undefined;
   const topicResourcePeers = createTopicResourcePeers();
   const serverId = resolveHttpServerId();
+  // 本地独立 Web 模式下以 local 宿主保持任务与项目存储，避免本地会话被改写为 remote:server:dev 导致侧边栏丢失与 task-group 校验失败
+  const projectStorageHostId = process.env["ZCODE_SERVER_STORAGE_HOST_ID"]?.trim() || "local";
   const { services, workspaceIdentityMapper, migrationFailedPathCount } =
     await createServerHostServices({
       topicResourceRelayChannel: (request) => topicResourcePeers.getChannel(request),
       sourceServerId: serverId,
       zcodeBuiltinProviderConfigFilePath,
       providerProvisioningTargetEnabled: Boolean(authToken),
+      projectStorageHostId,
     });
 
   createHttpServer(services, port, {

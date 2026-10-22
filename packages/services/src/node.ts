@@ -2216,12 +2216,30 @@ export function createLocalServices(options: {
   });
   const zcodeAgentService = createZCodeAgentService({
     prepareProjectExecution,
-    prepareSessionCreation: async (target) =>
-      (await taskIndexRepo.getProjectRepository()).reserveCreatedTask({
-        task: { ...target, taskId: target.sessionId },
-        projectId: target.projectId,
-        additionalDirectories: target.additionalDirectories,
-      }).additionalDirectories,
+    prepareSessionCreation: async (target) => {
+      const repo = await taskIndexRepo.getProjectRepository();
+      try {
+        return repo.reserveCreatedTask({
+          task: { ...target, taskId: target.sessionId },
+          projectId: target.projectId,
+          additionalDirectories: target.additionalDirectories,
+        }).additionalDirectories;
+      } catch (error) {
+        // 修复原因：当客户端浏览器本地缓存了已删除或不存在的 projectId 时，回退到 null 由仓库按根目录自动解析，避免草稿会话创建失败并阻断对话
+        if (
+          error instanceof Error &&
+          (error.message === "project.deleted" || error.message === "project.not-found") &&
+          target.projectId
+        ) {
+          return repo.reserveCreatedTask({
+            task: { ...target, taskId: target.sessionId },
+            projectId: null,
+            additionalDirectories: target.additionalDirectories,
+          }).additionalDirectories;
+        }
+        throw error;
+      }
+    },
     resolveSessionDirectories: async (target) =>
       (await projectService.resolveSessionDirectories({ ...target, taskId: target.sessionId }))
         .additionalDirectories,
@@ -3223,10 +3241,14 @@ export async function createServerHostServices(options: {
   sourceServerId: string;
   zcodeBuiltinProviderConfigFilePath: string;
   providerProvisioningTargetEnabled?: boolean;
+  /** 当作为本地独立 Web 服务端时允许使用 local，避免将本地会话改写为远端身份 */
+  projectStorageHostId?: string;
 }) {
-  const projectStorageHostId = remoteHostIdFromWorkspaceIdentity(
-    buildServerRemoteWorkspaceIdentity({ serverId: options.sourceServerId, workspacePath: "/" }),
-  );
+  const projectStorageHostId =
+    options.projectStorageHostId ??
+    remoteHostIdFromWorkspaceIdentity(
+      buildServerRemoteWorkspaceIdentity({ serverId: options.sourceServerId, workspacePath: "/" }),
+    );
   if (!projectStorageHostId) throw new Error("Invalid Source Server storage identity");
   await migrateApplicationStorage(await createSettingService().get(), projectStorageHostId);
   const workspaceAliasRepo = new SourceServerWorkspaceAliasRepo();
@@ -3276,4 +3298,3 @@ export {
   createWindowHostSessionsIndexObserver,
   type WindowHostSessionsIndexObserver,
 } from "./window-controller/windowHostSessionsIndexObserver.js";
-
