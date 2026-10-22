@@ -35,12 +35,11 @@ function formatUuid(bytes: Uint8Array): string {
   return segments.map((segment) => Array.from(segment, byteToHex).join("")).join("-");
 }
 
-export function createUuid(): string {
+/**
+ * 环境安全的 UUID 生成实现，不依赖全局 crypto.randomUUID，避免任何互相调用导致的递归爆栈。
+ */
+export function generateUuidFallback(): string {
   const runtimeCrypto = globalThis.crypto;
-  if (runtimeCrypto?.randomUUID) {
-    return runtimeCrypto.randomUUID();
-  }
-
   if (runtimeCrypto?.getRandomValues) {
     const bytes = new Uint8Array(16);
     runtimeCrypto.getRandomValues(bytes);
@@ -55,4 +54,56 @@ export function createUuid(): string {
     bytes[index] = Math.floor(Math.random() * 256);
   }
   return formatUuid(bytes);
+}
+
+type RandomUuidPolyfill = (() => string) & { __isPolyfill?: boolean };
+
+export function createUuid(): string {
+  const runtimeCrypto = globalThis.crypto;
+  const candidate = runtimeCrypto?.randomUUID as RandomUuidPolyfill | undefined;
+  // 修复原因：当通过 installCryptoRandomUuidPolyfill 挂载了 polyfill 时，不能再把 call 转发给 randomUUID，否则会陷入双向递归爆栈 (Maximum call stack size exceeded)。
+  if (typeof candidate === "function" && !candidate.__isPolyfill) {
+    try {
+      return candidate.call(runtimeCrypto);
+    } catch {
+      // 非安全上下文中直接调用可能抛错，此时安全回退
+    }
+  }
+
+  return generateUuidFallback();
+}
+
+/**
+ * 在内网 HTTP 等非安全上下文（Secure Context 限制）中，浏览器禁用原生 crypto.randomUUID。
+ * 安装此 polyfill 可为 globalThis.crypto 提供非递归的安全 fallback 实现。
+ */
+export function installCryptoRandomUuidPolyfill(): void {
+  if (typeof globalThis === "undefined") return;
+  const runtimeCrypto = globalThis.crypto;
+  const polyfillFn: RandomUuidPolyfill = Object.assign(() => generateUuidFallback(), {
+    __isPolyfill: true,
+  });
+
+  if (!runtimeCrypto) {
+    (globalThis as unknown as { crypto: unknown }).crypto = {
+      randomUUID: polyfillFn,
+    };
+    return;
+  }
+
+  if (typeof runtimeCrypto.randomUUID !== "function") {
+    try {
+      Object.defineProperty(runtimeCrypto, "randomUUID", {
+        value: polyfillFn,
+        configurable: true,
+        writable: true,
+      });
+    } catch {
+      try {
+        (runtimeCrypto as unknown as { randomUUID: unknown }).randomUUID = polyfillFn;
+      } catch {
+        // 静默忽略
+      }
+    }
+  }
 }
