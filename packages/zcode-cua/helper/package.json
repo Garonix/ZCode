@@ -1,0 +1,12 @@
+{
+  "name": "@zcode/zcode-cua",
+  "version": "0.6.5",
+  "private": true,
+  "zcodeCuaRuntime": {
+    "schema": 1,
+    "windows": {
+      "entry": "dist/helper.mjs",
+      "nativeAddon": "dist/helper.node"
+    }
+  }
+}
