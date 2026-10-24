@@ -166,4 +166,24 @@ describe("SidebarBottomActivity 共享槽位仲裁", () => {
     expect(container.querySelector('[data-testid="marketing-banner-stub"]')).toBeNull();
     expect(container.querySelector('[data-global-notice-type="highspeed-share"]')).not.toBeNull();
   });
+
+  it("enabled=false 时彻底静默 → 即使有 banner 也返回 null，不产生任何 DOM", () => {
+    const noticeStore = createGlobalNoticeStore({ storage: memoryStorage() });
+    publishShareNotice(noticeStore);
+    const controller = fakeController(renderableBanner);
+    const { container } = render(
+      createElement(
+        ZCodeIntlProvider,
+        { initialLocale: "zh-CN" },
+        createElement(
+          MarketingTouchContext.Provider,
+          { value: controller },
+          createElement(SidebarBottomActivity, { noticeStore, enabled: false }),
+        ),
+      ),
+    );
+
+    expect(container.querySelector('[data-testid="marketing-banner-stub"]')).toBeNull();
+    expect(container.querySelector('[data-global-notice-type="highspeed-share"]')).toBeNull();
+  });
 });

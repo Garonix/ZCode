@@ -55,9 +55,11 @@ export { Context as MarketingTouchContext };
 export function MarketingTouchProvider({
   children,
   desktop,
+  enabled = true,
 }: {
   children: ReactNode;
   desktop: boolean;
+  enabled?: boolean;
 }) {
   const services = useServices();
   const platform = usePlatform();
@@ -88,6 +90,9 @@ export function MarketingTouchProvider({
   refreshStartEntitlementRef.current = startEntitlement.refresh;
   const identity = user?.id ?? "anonymous";
   const createRuntime = useCallback(() => {
+    // 第一性原理与复利最优：未启用时直接返回 null，彻底切断营销控制器初始化、
+    // 后台网络轮询、DOM MutationObserver 与弹窗渲染，零资源损耗与零心智干扰。
+    if (!enabled) return null;
     const service = services.marketingTouchService;
     if (!service || restoring) return null;
     let poller: ReturnType<typeof createMarketingTouchPoller>;
@@ -316,6 +321,7 @@ export function MarketingTouchProvider({
     openSettingsTab,
     tabStore,
     openCodingPlanUpgrade,
+    enabled,
   ]);
   const [runtime, setRuntime] = useState<ReturnType<typeof createRuntime>>(null);
   useEffect(() => {

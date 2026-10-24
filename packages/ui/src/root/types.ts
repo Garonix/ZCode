@@ -99,6 +99,8 @@ export interface RootProps {
   webRemoteControlFeatureEnabled?: boolean;
   /** Assistant code-comment 卡片灰度；默认关闭，关闭时保留原始 directive。 */
   assistantCodeCommentCardsEnabled?: boolean;
+  /** 是否启用营销触达系统（横幅、营销弹窗等）；默认关闭以保持纯净工作区 */
+  marketingTouchEnabled?: boolean;
 }
 
 export interface WorkspaceSettingsLayerProps {

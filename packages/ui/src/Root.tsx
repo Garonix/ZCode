@@ -170,7 +170,10 @@ export function Root(props: RootProps) {
                         <CodingPlanUpgradeDialogProvider>
                           <RewardsProvider desktop={props.isDesktop === true}>
                             <RequestSecurityHost />
-                            <MarketingTouchProvider desktop={props.isDesktop === true}>
+                            <MarketingTouchProvider
+                              desktop={props.isDesktop === true}
+                              enabled={props.marketingTouchEnabled ?? false}
+                            >
                               <RemoteConnectionProgressProvider>
                                 <RootInner {...props} />
                               </RemoteConnectionProgressProvider>

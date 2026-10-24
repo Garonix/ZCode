@@ -13,9 +13,13 @@ import type { GlobalNoticeStore } from "@/global-notice/globalNoticeStore.js";
  */
 export function SidebarBottomActivity({
   noticeStore,
+  enabled = true,
 }: {
   noticeStore?: GlobalNoticeStore | null;
+  enabled?: boolean;
 } = {}) {
+  // 第一性原理与复利最优：未启用时直接返回 null，不产生任何 DOM，保持侧边栏左下角完全纯净。
+  if (!enabled) return null;
   const bannerVisible = useMarketingBannerVisible();
   if (bannerVisible) return <MarketingBanner />;
   // 未注入时走 GlobalNoticeSurface 默认的 browserGlobalNoticeStore。

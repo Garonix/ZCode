@@ -161,3 +161,20 @@ it("rewards 导航委托窗口 Provider，保留一次 confirm 上报且不领�
   );
   expect(h.services.codingPlanSubscriptionService.claimManualPlan).not.toHaveBeenCalled();
 });
+
+it("enabled=false 时彻底静默，不查询营销服务且不触发任何拉取", async () => {
+  h.services.marketingTouchService.query.mockResolvedValue({
+    scope: "fixture-scope",
+    deliveries: [],
+  });
+  render(
+    createElement(MarketingTouchProvider, {
+      desktop: true,
+      enabled: false,
+      children: createElement(MarketingBanner),
+    }),
+  );
+  // 等待可能存在的异步动作，验证 query 绝不被调用
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(h.services.marketingTouchService.query).not.toHaveBeenCalled();
+});

@@ -49,7 +49,6 @@ import { ProjectSidebarListHeader } from "@/project-sidebar/ProjectSidebarListHe
 import { ProjectSidebarNavigation } from "@/project-sidebar/ProjectSidebarNavigation.js";
 import { HomeOnlyWorkspaceRows } from "@/project-sidebar/HomeOnlyWorkspaceRows.js";
 import { WorkspaceSidebarFooter } from "@/WorkspaceSidebarFooter.js";
-import { SidebarBottomActivity } from "@/sidebar-activity/SidebarBottomActivity.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useTabStoreApi } from "@/store/TabStoreProvider.js";
 import { useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
@@ -211,7 +210,9 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
     (providerId, funnelContext) => openCodingPlanUpgrade({ providerId, funnelContext }),
     [openCodingPlanUpgrade],
   );
-  const banner = useMemo(() => <SidebarBottomActivity />, []);
+  // 第一性原理与复利最优：侧边栏左下角彻底收敛为纯粹工作区，不挂载任何营销 Banner 与社交裂变活动槽位。
+  // 释放纵向展示空间，消除任何视觉与注意力干扰。
+  const banner = undefined;
   // 手机远控 home-only 没有 base attachment，也就没有项目契约；改用 relay 层工作区列表与重连入口。
   const homeOnlySwitcher = service ? undefined : props.webRemoteControlWorkspaceSwitcher;
   return (
