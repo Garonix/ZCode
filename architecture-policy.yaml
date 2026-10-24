@@ -886,3 +886,9 @@ exceptions:
       - packages/ui/src/settings/DynamicWorkflowModeSetting.tsx
       - packages/ui/src/store/dynamicWorkflowAvailabilityStore.ts
     reason: Admitted upstream files edited only to let the user's dynamic workflow mode choice always win and keep the settings row visible; adopting packages/shared/src and packages/ui/src needs a separate module boundary refactor.
+  - id: marketing-touch-sidebar-activity-unmanaged-edit
+    rule: unmanaged-new-file
+    paths:
+      - packages/ui/src/components/marketing-touch/MarketingTouchProvider.tsx
+      - packages/ui/src/sidebar-activity/SidebarBottomActivity.tsx
+    reason: 营销触达系统静默与左下角侧边栏推广彻底隐藏；原上游文件仅做 enabled/静默开关受控收口，接管整个 marketing-touch 或 sidebar 目录需单独进行模块边界梳理。
