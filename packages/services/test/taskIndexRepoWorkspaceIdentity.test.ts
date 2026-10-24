@@ -284,4 +284,28 @@ describe("CLI facts mirror", () => {
       updatedAt: 20,
     });
   });
+
+  it("当 meta_json 为默认空对象 '{}' 时，按列事实兜底读取且不报错", async () => {
+    // 触发 repo 初始化
+    await repo.ensureReady();
+    const db = getRepoDatabase(repo);
+    // 模拟占位插入（例如 project-repository 或历史迁移），meta_json 使用默认 '{}'
+    db.prepare(`
+      INSERT INTO tasks (
+        workspace_key, workspace_path, task_id, title, mode, created_at, updated_at, meta_json
+      ) VALUES (
+        '/workspace/project', '/workspace/project', 'session-placeholder', '占位任务', 'default', 100, 200, '{}'
+      )
+    `).run();
+
+    const record = await repo.getTaskMeta({
+      taskId: "session-placeholder",
+      workspacePath: "/workspace/project",
+    });
+
+    expect(record).not.toBeNull();
+    expect(record?.taskId).toBe("session-placeholder");
+    expect(record?.workspacePath).toBe("/workspace/project");
+    expect(record?.mode).toBe("default");
+  });
 });

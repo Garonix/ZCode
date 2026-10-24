@@ -134,10 +134,54 @@ function rowToMeta(row: TaskIndexRow): ZCodeTaskMeta {
   };
 }
 
+function buildFallbackTaskMeta(row: TaskIndexRow, workspaceIdentity?: string): ZCodeTaskMeta {
+  return {
+    taskId: row.task_id,
+    traceId: `zcode-${row.task_id}`,
+    title: "",
+    titleOverridden: row.title_overridden === 1,
+    workspacePath: row.workspace_path,
+    workspaceIdentity,
+    createdAt: 0,
+    updatedAt: 0,
+    mode: (row.mode as ZCodeTaskMeta["mode"]) || "default",
+    model: row.model ?? undefined,
+    // 旧行 provider 列可能残留三方 CLI 值；meta 回退投影时统一归一为 glm。
+    provider: row.provider
+      ? normalizeAgentProviderToZCodeAgent(row.provider as ZCodeTaskMeta["provider"])
+      : undefined,
+    migrationSource: (row.migration_source as ZCodeTaskMeta["migrationSource"]) ?? undefined,
+    forkedFromTaskId: row.forked_from_task_id ?? undefined,
+    cronAutomationId: row.cron_automation_id ?? undefined,
+    offPeakTaskId: row.off_peak_task_id ?? undefined,
+    unreadAt: row.unread_at ?? undefined,
+  };
+}
+
 function readPresentation(row: TaskIndexRow): ZCodeTaskMeta {
   const workspaceIdentity = resolveTaskIndexRowWorkspaceIdentity(row);
+  const rawJson = row.meta_json?.trim();
+  // Bugfix: SQLite 表列默认值为 DEFAULT '{}'；占位行或未回填 meta 的新会话直接按列级事实构造，不误报非法警告。
+  if (!rawJson || rawJson === "{}" || rawJson === "null") {
+    return buildFallbackTaskMeta(row, workspaceIdentity);
+  }
   try {
-    const parsed = zcodeTaskMetaSchema.safeParse(JSON.parse(row.meta_json));
+    const raw = JSON.parse(rawJson);
+    if (!raw || typeof raw !== "object" || Object.keys(raw).length === 0) {
+      return buildFallbackTaskMeta(row, workspaceIdentity);
+    }
+    // 允许使用 row 本身已知的主键和模式列做兜底回填，防止存量历史 meta 因缺少冗余列而报错
+    const candidate = {
+      taskId: row.task_id,
+      traceId: `zcode-${row.task_id}`,
+      workspacePath: row.workspace_path,
+      mode: (row.mode as ZCodeTaskMeta["mode"]) || "default",
+      createdAt: row.created_at ?? 0,
+      updatedAt: row.updated_at ?? 0,
+      title: row.title ?? "",
+      ...raw,
+    };
+    const parsed = zcodeTaskMetaSchema.safeParse(candidate);
     if (parsed.success) {
       return {
         ...(parsed.data as ZCodeTaskMeta),
@@ -166,27 +210,7 @@ function readPresentation(row: TaskIndexRow): ZCodeTaskMeta {
     logger.warn(undefined, `读取 task index meta_json 失败 taskId=${row.task_id}`, error);
   }
 
-  return {
-    taskId: row.task_id,
-    traceId: `zcode-${row.task_id}`,
-    title: "",
-    titleOverridden: row.title_overridden === 1,
-    workspacePath: row.workspace_path,
-    workspaceIdentity,
-    createdAt: 0,
-    updatedAt: 0,
-    mode: row.mode as ZCodeTaskMeta["mode"],
-    model: row.model ?? undefined,
-    // 旧行 provider 列可能残留三方 CLI 值；meta 回退投影时统一归一为 glm。
-    provider: row.provider
-      ? normalizeAgentProviderToZCodeAgent(row.provider as ZCodeTaskMeta["provider"])
-      : undefined,
-    migrationSource: (row.migration_source as ZCodeTaskMeta["migrationSource"]) ?? undefined,
-    forkedFromTaskId: row.forked_from_task_id ?? undefined,
-    cronAutomationId: row.cron_automation_id ?? undefined,
-    offPeakTaskId: row.off_peak_task_id ?? undefined,
-    unreadAt: row.unread_at ?? undefined,
-  };
+  return buildFallbackTaskMeta(row, workspaceIdentity);
 }
 
 /** 序列化 meta 到 meta_json。cron 身份随 meta 一起写入（单一来源），另在 writeRecord 投影到 cron_automation_id 索引列。 */
