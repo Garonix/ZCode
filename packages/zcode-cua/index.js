@@ -1,1 +1,5 @@
-export { createComputerUseRuntime } from "./vendor/dist-index.js";
+export {
+  createComputerUseRuntime,
+  ensureStandaloneHelperLaunched,
+  ensureWindowsHelperForked,
+} from "./vendor/dist-index.js";

@@ -35503,7 +35503,7 @@ function createComputerUseRuntime(options) {
   const broker = new BrokerClient({
     socketPath,
     refreshMarkerPath: options.refreshMarkerPath,
-    ensureBrokerAvailable: options.ensureBrokerAvailable ?? (() => ensureStandaloneHelperLaunched(socketPath, env))
+    ensureBrokerAvailable: options.ensureBrokerAvailable ?? (() => ensureStandaloneHelperLaunched(socketPath, env, options))
   });
   const sessions = /* @__PURE__ */ new Map();
   let sessionAdmission = Promise.resolve();
@@ -35605,7 +35605,11 @@ function createComputerUseRuntime(options) {
     }
   };
 }
-async function ensureStandaloneHelperLaunched(socketPath, env) {
+async function ensureStandaloneHelperLaunched(socketPath, env, options = {}) {
+  if (process.platform === "win32") {
+    await ensureWindowsHelperForked(socketPath, env, options.fork);
+    return;
+  }
   if (process.platform !== "darwin") return;
   const { existsSync: existsSync5 } = await import("node:fs");
   const bundledDevAppPath = env.ZCODE_CUA_BUNDLED_HELPER_APP_PATH?.trim();
@@ -35622,6 +35626,48 @@ async function ensureStandaloneHelperLaunched(socketPath, env) {
   const appPath = candidates.find((candidate) => existsSync5(candidate));
   if (!appPath) return;
   await launchHelperApp(appPath, socketPath, env);
+}
+async function ensureWindowsHelperForked(socketPath, env, forkImpl) {
+  const raw = env.ZCODE_CUA_WIN_HELPER_RECIPE?.trim();
+  if (!raw) return;
+  let recipe;
+  try {
+    recipe = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (
+    typeof recipe.command !== "string" || !recipe.command ||
+    typeof recipe.entryPath !== "string" || !recipe.entryPath ||
+    typeof recipe.root !== "string" || !recipe.root ||
+    typeof recipe.addonPath !== "string" || !recipe.addonPath ||
+    !recipe.commandEnv || typeof recipe.commandEnv !== "object" ||
+    !Number.isInteger(recipe.hostPid) || recipe.hostPid <= 0
+  ) {
+    return;
+  }
+  const { fork } = await import("node:child_process");
+  const run = forkImpl ?? fork;
+  try {
+    const child = run(
+      recipe.command,
+      [recipe.entryPath, "--socket", socketPath, "--parent-pid", String(recipe.hostPid)],
+      {
+        cwd: recipe.root,
+        detached: true,
+        stdio: "ignore",
+        env: {
+          ...process.env,
+          ...recipe.commandEnv,
+          ZCODE_CUA_HELPER_ADDON: recipe.addonPath,
+          ELECTRON_RUN_AS_NODE: "1",
+        },
+      }
+    );
+    child.unref();
+  } catch {
+    // 拉起 best-effort：失败交给 warmup 重试环用真实 broker 错误收口
+  }
 }
 async function launchHelperApp(appPath, socketPath, env) {
   const { execFile: execFile2 } = await import("node:child_process");
@@ -35728,6 +35774,7 @@ export {
   resolveStandaloneInstallRoot,
   resolveZcodeHome,
   ensureStandaloneHelperLaunched,
+  ensureWindowsHelperForked,
   launchHelperApp,
   promoteHelperApp,
   acquireMacOSCuaHelperInstallLease,
