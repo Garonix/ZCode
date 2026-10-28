@@ -4,7 +4,10 @@
 // everything after this prelude is the shipped compiled artifact.
 // ---------------------------------------------------------------------------
 import { createRequire as __createRequire } from "node:module";
-var __requireReal = __createRequire(import.meta.url);
+var __requireReal =
+  typeof import.meta !== "undefined" && import.meta.url
+    ? __createRequire(import.meta.url)
+    : (typeof require === "function" ? require : __createRequire(typeof __filename !== "undefined" ? __filename : process.cwd()));
 var createRequire = __createRequire;
 var __require = (x) => __requireReal(x);
 var __defProp = Object.defineProperty;
@@ -34847,7 +34850,8 @@ var SERVER_VERSION = (() => {
     return "0.6.3";
   }
   try {
-    const require2 = createRequire2(import.meta.url);
+    const metaUrl = typeof import.meta !== "undefined" && import.meta.url ? import.meta.url : (typeof __filename !== "undefined" ? __filename : process.cwd());
+    const require2 = createRequire2(metaUrl);
     return require2("../../package.json").version;
   } catch (e) {
     console.warn(
