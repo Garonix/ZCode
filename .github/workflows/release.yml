@@ -129,6 +129,10 @@ jobs:
           name: remote-mock-cdn
           path: packages/desktop/mock-cdn
 
+      - name: Prepare macOS CUA Helper
+        if: runner.os == 'macOS'
+        run: node scripts/prepare-macos-cua-helper.mjs ${{ matrix.target_arch }}
+
       - name: Build Desktop package
         run: pnpm --filter @zcode/desktop bundle -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
 
