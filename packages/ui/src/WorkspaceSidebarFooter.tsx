@@ -1,6 +1,6 @@
 import { SidebarNativeTooltip, ControlHintTooltip } from "@/ControlHintTooltip.js";
 /* oxlint-disable eslint(max-lines) -- footer 聚合账户、主题、模式和快捷键菜单。 */
-import type { Locale, UserInfo } from "@zcode/shared";
+import { ZCODE_PURE_EDITION, type Locale, type UserInfo } from "@zcode/shared";
 import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
 import { DesktopCommandIds } from "@zcode/shared";
 import {
@@ -80,6 +80,9 @@ function getSidebarProfileBadge(
   if (user) {
     return getSidebarProfileName(user);
   }
+  if (ZCODE_PURE_EDITION) {
+    return "工作台";
+  }
 
   return formatMessage({ id: "sidebar.profile.notLoggedIn" });
 }
@@ -132,7 +135,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
 }) {
   const { intl } = useZCodeIntl();
   const platform = usePlatform();
-  const openRewards = useOpenRewards();
+  const openRewards = ZCODE_PURE_EDITION ? null : useOpenRewards();
   const interfaceMode = useZCodeStore((state) => state.interfaceMode);
   const setInterfaceMode = useZCodeStore((state) => state.setInterfaceMode);
   const zoomInShortcutLabel = useShortcutCommandLabel("zoomIn");
@@ -466,7 +469,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex shrink-0 items-center gap-1.5">
-          {isDesktop && workspacePath ? (
+          {!ZCODE_PURE_EDITION && isDesktop && workspacePath ? (
             <WorkspaceWebRemoteControlTrigger
               workspacePath={workspacePath}
               workspaceIdentity={workspaceIdentity}

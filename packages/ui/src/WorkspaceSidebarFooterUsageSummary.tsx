@@ -1,5 +1,6 @@
 import { SidebarNativeTooltip } from "@/ControlHintTooltip.js";
 import { useCodingPlanEntryGate } from "@/settings/CodingPlanEntryButton.js";
+import { ZCODE_PURE_EDITION } from "@zcode/shared";
 /* eslint-disable max-lines -- footer 套餐徽标、升级入口与 entitlement 探测共用同一份
    provider 选择与 family 过滤上下文，拆文件会让 zai/bigmodel 对称性难以追踪。 */
 import { useEffect, useMemo } from "react";
@@ -428,6 +429,9 @@ export function WorkspaceSidebarFooterUsageSummaryContent({
     funnelContext: CodingPlanFunnelContext,
   ) => void;
 }) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
   const { intl } = useZCodeIntl();
   const entryGate = useCodingPlanEntryGate();
   const { providerEntitlements, upgradeTargetProviderId } = state;
@@ -487,6 +491,9 @@ export function WorkspaceSidebarFooterPlanBadge({
 }: {
   state: WorkspaceSidebarFooterUsageSummaryState;
 }) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
   const { intl } = useZCodeIntl();
   const label =
     state.profilePlanBadge?.audience === "team"

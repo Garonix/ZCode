@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { ZCODE_PURE_EDITION } from "@zcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useOptionalCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
@@ -16,7 +17,7 @@ export function useCodingPlanEntryGate() {
   return { status, label, retry: dialog?.inventory?.retry };
 }
 
-/** 各入口共享同一查询状态；失败时按钮只重试，不继续执行购买动作。 */
+/** 各入口共享同一查询状态；纯净版时直接返回 null，不渲染任何付费升级入口。 */
 export function CodingPlanEntryButton({
   children,
   disabled,
@@ -24,6 +25,9 @@ export function CodingPlanEntryButton({
   bypassGate = false,
   ...props
 }: ComponentProps<typeof Button> & { bypassGate?: boolean }) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
   const gate = useCodingPlanEntryGate();
   const status = bypassGate ? "ready" : gate.status;
   return (

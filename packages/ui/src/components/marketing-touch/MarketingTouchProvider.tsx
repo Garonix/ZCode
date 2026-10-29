@@ -2,6 +2,7 @@ import {
   prepareRequestVerificationClaim,
   useRequestVerificationPrewarm,
 } from "@/request-security-edition/claim.js";
+import { ZCODE_PURE_EDITION } from "@zcode/shared";
 import { requestVerificationClaimFailureMessageId } from "@/request-security-edition/errors.js";
 import { useStartPlanEntitlement } from "@/hooks/useStartPlanEntitlement.js";
 import { createContext, useContext, useEffect, useCallback, useState, useRef } from "react";
@@ -59,6 +60,9 @@ export function MarketingTouchProvider({
   children: ReactNode;
   desktop: boolean;
 }) {
+  if (ZCODE_PURE_EDITION) {
+    return <>{children}</>;
+  }
   const services = useServices();
   const platform = usePlatform();
   const openSettingsTab = useTabStore((state) => state.openSettingsTab);
