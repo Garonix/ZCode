@@ -103,6 +103,33 @@ function extractBalancedJsonObject(text, start, maxChars) {
   return undefined;
 }
 
+export function extractOfficialCuaImageRefTexts(text) {
+  if (typeof text !== "string" || !text.includes(`"${IMAGE_REF_CREDENTIAL_KEY}"`)) {
+    return { refs: [], remainingText: text };
+  }
+  const refs = [];
+  let remaining = text;
+  let searchFrom = 0;
+  while (true) {
+    const keyIndex = remaining.indexOf(`"${IMAGE_REF_CREDENTIAL_KEY}"`, searchFrom);
+    if (keyIndex < 0) break;
+    const objStart = remaining.lastIndexOf("{", keyIndex);
+    if (objStart < 0) {
+      searchFrom = keyIndex + IMAGE_REF_CREDENTIAL_KEY.length;
+      continue;
+    }
+    const candidate = extractBalancedJsonObject(remaining, objStart, IMAGE_REF_MAX_TEXT_CHARS);
+    if (candidate !== undefined && isOfficialCuaImageRefText(candidate)) {
+      refs.push(candidate.trim());
+      remaining = remaining.slice(0, objStart) + remaining.slice(objStart + candidate.length);
+      searchFrom = objStart;
+    } else {
+      searchFrom = keyIndex + IMAGE_REF_CREDENTIAL_KEY.length;
+    }
+  }
+  return { refs, remainingText: remaining };
+}
+
 export function parseOfficialCuaImageRef(text) {
   const ref = parseWholeTextImageRef(text);
   return ref ? { authority: JSON.stringify({ [IMAGE_REF_CREDENTIAL_KEY]: ref }) } : undefined;
@@ -125,8 +152,8 @@ function isImageBlock(block) {
   return (
     isRecord(block) &&
     block.type === "image" &&
-    typeof block.data === "string" &&
-    block.data.length > 0
+    ((typeof block.data === "string" && block.data.length > 0) ||
+      (typeof block.dataUrl === "string" && block.dataUrl.length > 0))
   );
 }
 
