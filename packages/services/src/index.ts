@@ -403,3 +403,11 @@ export type {
   GroupNode,
   MoveGroupNode,
 } from "#src/task-groups/contract.js";
+
+export {
+  fetchRemoteProviderModels,
+  extractModelIds,
+  resolveCandidateEndpoints,
+  type FetchRemoteModelsInput,
+  type FetchRemoteModelsResult,
+} from "./model-provider/remoteModelDiscoveryService.js";
