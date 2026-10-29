@@ -34,3 +34,15 @@ export interface ComputerUseRuntimeOptions {
 export declare function createComputerUseRuntime(
   options?: ComputerUseRuntimeOptions,
 ): ComputerUseRuntime;
+
+export declare function ensureStandaloneHelperLaunched(
+  socketPath: string,
+  env: Record<string, string | undefined>,
+  options?: { fork?: unknown },
+): Promise<void>;
+
+export declare function ensureWindowsHelperForked(
+  socketPath: string,
+  env: Record<string, string | undefined>,
+  forkImpl?: unknown,
+): Promise<void>;
