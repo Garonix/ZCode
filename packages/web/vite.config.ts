@@ -61,6 +61,8 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      host: "0.0.0.0",
+      allowedHosts: true,
       proxy: {
         // Web 登录本地调试时，OAuth token 交换必须先命中线上同源接口。
         // 该专用代理放在 `/api` 通配代理之前，避免被转发到本地 server 导致 404。

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
+import { ZCODE_PURE_EDITION } from "@zcode/shared";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,9 @@ export function WorkspaceHelpMenuButton({
    */
   isDesktop?: boolean;
 }) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
   const { intl } = useZCodeIntl();
   const platform = usePlatform();
   const [open, setOpen] = useState(false);

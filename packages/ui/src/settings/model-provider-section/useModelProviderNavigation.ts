@@ -9,6 +9,7 @@ import type {
 } from "@zcode/shared";
 import {
   BUILTIN_MODEL_PROVIDER_IDS,
+  ZCODE_PURE_EDITION,
   isStartPlanModelProviderId,
   resolveModelProviderFamilySpecByProviderId,
   resolveProviderFamilyDomainFromOAuthProvider,
@@ -178,8 +179,10 @@ export function useModelProviderNavigation({
   );
 
   const navigationGroups = useMemo<ModelProviderNavGroup[]>(() => {
-    const groups: ModelProviderNavGroup[] = [
-      {
+    const groups: ModelProviderNavGroup[] = [];
+
+    if (!ZCODE_PURE_EDITION) {
+      groups.push({
         id: "preset",
         title: intl.formatMessage({ id: "settings.modelProvider.presetTitle" }),
         items: [
@@ -209,19 +212,20 @@ export function useModelProviderNavigation({
           }),
           ...codingPlanItems.filter((item) => isStartPlanModelProviderId(item.presetId)),
         ],
-      },
-      {
-        id: "custom",
-        title: intl.formatMessage({ id: "settings.modelProvider.customTitle" }),
-        items: customProviders.map((provider) => ({
-          key: createCustomProviderNodeKey(provider.providerId),
-          type: "custom" as const,
-          label: getProviderFormLabel(provider),
-          provider,
-          statusActive: provider.executable === true,
-        })),
-      },
-    ];
+      });
+    }
+
+    groups.push({
+      id: "custom",
+      title: intl.formatMessage({ id: "settings.modelProvider.customTitle" }),
+      items: customProviders.map((provider) => ({
+        key: createCustomProviderNodeKey(provider.providerId),
+        type: "custom" as const,
+        label: getProviderFormLabel(provider),
+        provider,
+        statusActive: provider.executable === true,
+      })),
+    });
 
     return groups;
   }, [

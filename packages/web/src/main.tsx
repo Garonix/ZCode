@@ -1,4 +1,17 @@
 import { mobilePluginDiscoveryTelemetrySchema } from "@zcode/shared";
+
+// 极简内网非安全上下文 Polyfill：防止局域网 HTTP 访问时 randomUUID 缺失导致任务创建崩溃
+if (typeof window !== "undefined") {
+  if (!window.crypto) {
+    (window as any).crypto = {};
+  }
+  if (!window.crypto.randomUUID) {
+    window.crypto.randomUUID = () =>
+      "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c: any) =>
+        (c ^ ((window.crypto.getRandomValues(new Uint8Array(1))[0] ?? 0) & (15 >> (c / 4)))).toString(16),
+      ) as `${string}-${string}-${string}-${string}-${string}`;
+  }
+}
 import {
   sessionCreateTelemetrySchema,
   type RendererTelemetryEventPayload,
