@@ -131,4 +131,44 @@ describe("paths", () => {
       }),
     ).toEqual({ ok: true });
   });
+
+  describe("getPackagedResourcesPath", () => {
+    it("优先读取 process.resourcesPath", async () => {
+      const { getPackagedResourcesPath } = await import("../src/paths.js");
+      const original = (process as any).resourcesPath;
+      try {
+        (process as any).resourcesPath = "/custom/resources";
+        expect(getPackagedResourcesPath({ ZCODE_RESOURCES_PATH: "/env/resources" })).toBe("/custom/resources");
+      } finally {
+        (process as any).resourcesPath = original;
+      }
+    });
+
+    it("process.resourcesPath 为空时读取 env.ZCODE_RESOURCES_PATH", async () => {
+      const { getPackagedResourcesPath } = await import("../src/paths.js");
+      const original = (process as any).resourcesPath;
+      try {
+        delete (process as any).resourcesPath;
+        expect(getPackagedResourcesPath({ ZCODE_RESOURCES_PATH: "C:\\ZCode\\resources" })).toBe(
+          "C:\\ZCode\\resources",
+        );
+      } finally {
+        (process as any).resourcesPath = original;
+      }
+    });
+
+    it("基于 process.execPath 的推导与兜底", async () => {
+      const { getPackagedResourcesPath } = await import("../src/paths.js");
+      const original = (process as any).resourcesPath;
+      const originalExec = process.execPath;
+      try {
+        delete (process as any).resourcesPath;
+        // 不存在的路径应返回 null
+        expect(getPackagedResourcesPath({}, "win32")).toBe(null);
+      } finally {
+        (process as any).resourcesPath = original;
+        Object.defineProperty(process, "execPath", { value: originalExec });
+      }
+    });
+  });
 });

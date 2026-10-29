@@ -1589,7 +1589,9 @@ function RootInner({
             >
               <SettingsPage {...settingsLayerProps} />
             </ScopedErrorBoundary>
-          ) : null
+          ) : (
+            <RootStartupLoading label={intl.formatMessage({ id: "common.loading" })} />
+          )
         ) : (
           <RemoteWorkspaceControllerProvider controller={remoteWorkspaceController}>
             <RemoteProjectPresentationProvider

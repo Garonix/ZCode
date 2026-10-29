@@ -1,8 +1,8 @@
 /* path 规则集中维护：旧 task 快照与 provider 配置路径仍在这里收口。 */
-import { lstatSync } from "node:fs";
+import { existsSync, lstatSync } from "node:fs";
 import { cp } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { basename, join, win32 } from "node:path";
+import { basename, dirname, join, resolve, win32 } from "node:path";
 import { homedir } from "node:os";
 import {
   DATA_BASE_DIR_FORBIDDEN_WINDOWS_INSTALL_DIR_ERROR_CODE,
@@ -266,4 +266,47 @@ export async function copyDataDirectory(oldBaseDir: string, newBaseDir: string):
       return true;
     },
   });
+}
+
+/**
+ * 解析 Electron 打包后的 resources 资源目录路径。
+ *
+ * 解决 UtilityProcess / 子进程中缺失 process.resourcesPath 的问题：
+ * 1. 优先读取 process.resourcesPath（Electron 主进程与渲染进程自带）
+ * 2. 次优读取 process.env.ZCODE_RESOURCES_PATH（主进程向 Host/UtilityProcess 传递）
+ * 3. 兜底基于 process.execPath 推导（Windows/Linux 为 <execDir>/resources，macOS 为 <execDir>/../Resources）
+ */
+export function getPackagedResourcesPath(
+  env: Record<string, string | undefined> = process.env,
+  platform: NodeJS.Platform = process.platform,
+): string | null {
+  const processWithResources = process as NodeJS.Process & { resourcesPath?: string };
+  if (
+    typeof processWithResources.resourcesPath === "string" &&
+    processWithResources.resourcesPath.trim().length > 0
+  ) {
+    return processWithResources.resourcesPath.trim();
+  }
+
+  const envResourcesPath = env.ZCODE_RESOURCES_PATH?.trim();
+  if (envResourcesPath) {
+    return envResourcesPath;
+  }
+
+  if (process.execPath) {
+    const execDir = dirname(process.execPath);
+    if (platform === "darwin") {
+      const macResources = resolve(execDir, "..", "Resources");
+      if (existsSync(macResources)) {
+        return macResources;
+      }
+    } else {
+      const winResources = resolve(execDir, "resources");
+      if (existsSync(winResources)) {
+        return winResources;
+      }
+    }
+  }
+
+  return null;
 }

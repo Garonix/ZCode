@@ -1,6 +1,7 @@
 import { accessSync, constants, existsSync } from "node:fs";
 import { delimiter, dirname, join, resolve as resolvePath } from "node:path";
 import { getRuntimeToolRuntime, type RuntimeToolId } from "@zcode/shared";
+import { getPackagedResourcesPath } from "../paths.js";
 
 function isExecutableFile(path: string): boolean {
   try {
@@ -109,10 +110,7 @@ export function findRuntimeToolBinary(
     return envPath;
   }
 
-  const resourcesPath =
-    typeof (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath === "string"
-      ? (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
-      : null;
+  const resourcesPath = getPackagedResourcesPath(env);
   const runtimeRoot = env.ZCODE_SERVER_RUNTIME_ROOT?.trim();
   const moduleDir: string | undefined = import.meta.dirname;
   const candidate = resolveExistingPath([

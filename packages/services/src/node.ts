@@ -34,7 +34,7 @@ import {
   NodeModelSelectionConfigRepository,
   PERSONAL_PROVIDER_CONFIG_FILE_NAME,
 } from "@zcode/provider-node";
-import { getAppConfigDir as resolveAppConfigDir } from "./paths.js";
+import { getAppConfigDir as resolveAppConfigDir, getPackagedResourcesPath } from "./paths.js";
 import {
   createHasExistingLocalTask,
   hasAnyAgentSessionRow,
@@ -119,6 +119,7 @@ export {
   getGitCheckpointIndexRootDir,
   copyDataDirectory,
   validateDataBaseDirTarget,
+  getPackagedResourcesPath,
   ZCODE_WINDOWS_APP_INSTALL_DIR_ENV,
 } from "./paths.js";
 export { createGitService } from "./git/gitService.js";
@@ -1123,9 +1124,7 @@ export function resolveBundledCuaHelperAppPath(
   if (injectedPath) {
     return injectedPath;
   }
-  const resourcesPath = (
-    process as NodeJS.Process & { resourcesPath?: string }
-  ).resourcesPath?.trim();
+  const resourcesPath = getPackagedResourcesPath(env);
   return resourcesPath ? join(resourcesPath, "cua-helper", HELPER_APP_NAME) : undefined;
 }
 
