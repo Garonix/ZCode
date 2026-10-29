@@ -55,15 +55,15 @@ describe("ensureWindowsHelperForked", () => {
       fork,
     );
     expect(calls()).toHaveLength(1);
-    const [command, argv, options] = calls()[0] as [string, string[], Record<string, unknown>];
-    expect(command).toBe(RECIPE.command);
+    const [modulePath, argv, options] = calls()[0] as [string, string[], Record<string, unknown>];
+    expect(modulePath).toBe(RECIPE.entryPath);
     expect(argv).toEqual([
-      RECIPE.entryPath,
       "--socket",
       "\\\\.\\pipe\\zcode-cua-x",
       "--parent-pid",
       "4242",
     ]);
+    expect(options.execPath).toBe(RECIPE.command);
     expect(options.cwd).toBe(RECIPE.root);
     expect(options.detached).toBe(true);
     expect(options.stdio).toBe("ignore");

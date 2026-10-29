@@ -35650,9 +35650,10 @@ async function ensureWindowsHelperForked(socketPath, env, forkImpl) {
   const run = forkImpl ?? fork;
   try {
     const child = run(
-      recipe.command,
-      [recipe.entryPath, "--socket", socketPath, "--parent-pid", String(recipe.hostPid)],
+      recipe.entryPath,
+      ["--socket", socketPath, "--parent-pid", String(recipe.hostPid)],
       {
+        execPath: recipe.command,
         cwd: recipe.root,
         detached: true,
         stdio: "ignore",
