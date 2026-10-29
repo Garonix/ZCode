@@ -472,6 +472,7 @@ function formatContentBlock(block: Record<string, unknown>): ModelMessageContent
           type: "image",
           mediaType: block.mimeType,
           dataUrl: asDataUrl(block.data, block.mimeType),
+          data: block.data,
           source: {
             id: "mcp-image",
             kind: "inline",
@@ -479,7 +480,7 @@ function formatContentBlock(block: Record<string, unknown>): ModelMessageContent
             placeholder: "MCP image",
             sizeBytes: estimateBase64Bytes(block.data),
           },
-        },
+        } as ModelMessageContentBlock,
       ];
     }
     return [{ type: "text", text: `[MCP image content omitted: ${mimeType}]` }];
