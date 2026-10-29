@@ -21,6 +21,7 @@ import { LucideProvider, RefreshCw } from "lucide-react";
 import {
   APP_RUNTIME_PREFERENCES_CHANGED_BROADCAST_CHANNEL,
   DesktopCommandIds,
+  ZCODE_PURE_EDITION,
   appRuntimePreferencesChangedBroadcastPayloadSchema,
 } from "@zcode/shared";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
@@ -288,9 +289,13 @@ function RootInner({
     codingPlanSubscriptionService: services.codingPlanSubscriptionService,
   });
   const [welcomeScreenOpenReason, setWelcomeScreenOpenReason] =
-    useState<WelcomeScreenOpenReason | null>(() =>
-      consumeZcodeJwtInvalidRestartMarker() ? "session-expired" : null,
-    );
+    useState<WelcomeScreenOpenReason | null>(() => {
+      if (ZCODE_PURE_EDITION) {
+        consumeZcodeJwtInvalidRestartMarker();
+        return null;
+      }
+      return consumeZcodeJwtInvalidRestartMarker() ? "session-expired" : null;
+    });
   const [providerFamilyDomainMigrationComplete, setProviderFamilyDomainMigrationComplete] =
     useState(false);
   const loginEntryRequest = useZCodeStore((state) => state.loginEntryRequest);
@@ -602,6 +607,9 @@ function RootInner({
       refreshProviderState,
       readModelSelectionView: readRootModelSelectionView,
       setLoginEntryOpen: (open) => {
+        if (ZCODE_PURE_EDITION) {
+          return;
+        }
         setWelcomeScreenOpenReason((currentReason) => {
           if (open) {
             return "startup-provider-required";
@@ -1502,7 +1510,7 @@ function RootInner({
     onCreateTask: handleCreateTask,
     onOpenWorkspace: handleOpenWorkspace,
     allowOpenWorkspace,
-    onLogin: !user ? handleOpenLoginEntry : undefined,
+    onLogin: !user && !ZCODE_PURE_EDITION ? handleOpenLoginEntry : undefined,
     onLogout: user ? handleLogout : undefined,
     user,
   };
@@ -1642,7 +1650,7 @@ function RootInner({
                 allowRemoteWorkspace={allowRemoteWorkspace}
                 handleBackFromSettings={handleBackFromSettings}
                 handleLogout={user ? handleLogout : undefined}
-                onLogin={!user ? handleOpenLoginEntry : undefined}
+                onLogin={!user && !ZCODE_PURE_EDITION ? handleOpenLoginEntry : undefined}
                 user={user}
                 reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
                 remoteWorkspaceRecoveryByWorkspaceKey={remoteWorkspaceRecoveryByWorkspaceKey}

@@ -49,17 +49,24 @@ export const RUNTIME_ZCODE_DEBUG =
   typeof process !== "undefined" ? process.env.ZCODE_DEBUG : undefined;
 
 // ── 构建期可选能力（见 docs/desktop/build-time-optional-capabilities.md），未注入时一律关闭 ──
-/** ARMS RUM 上报地址；为空时 SDK 以 enable=false 初始化，不产生上报。 */
+/** 纯净版发行标记：开启时系统自动旁路云端商业化、登录门禁、营销弹窗与遥测上报 */
+export const ZCODE_PURE_EDITION = true;
+
+/** ARMS RUM 上报地址；为空时 SDK 以 enable=false 初始化，不产生上报。纯净版直接置空 */
 export const ZCODE_ARMS_RUM_ENDPOINT: string =
-  typeof __ZCODE_ARMS_RUM_ENDPOINT__ !== "undefined" ? __ZCODE_ARMS_RUM_ENDPOINT__ : "";
-/** 事件上报（数仓）地址；为空时不上报。 */
+  typeof __ZCODE_ARMS_RUM_ENDPOINT__ !== "undefined" && !ZCODE_PURE_EDITION
+    ? __ZCODE_ARMS_RUM_ENDPOINT__
+    : "";
+/** 事件上报（数仓）地址；为空时不上报。纯净版直接置空 */
 export const ZCODE_TELEMETRY_REPORT_ENDPOINT: string =
-  typeof __ZCODE_TELEMETRY_REPORT_ENDPOINT__ !== "undefined"
+  typeof __ZCODE_TELEMETRY_REPORT_ENDPOINT__ !== "undefined" && !ZCODE_PURE_EDITION
     ? __ZCODE_TELEMETRY_REPORT_ENDPOINT__
     : "";
-/** 桌面自动更新是否启用。 */
+/** 桌面自动更新是否启用。纯净版直接关闭 */
 export const ZCODE_AUTO_UPDATE_ENABLED: boolean =
-  typeof __ZCODE_AUTO_UPDATE_ENABLED__ !== "undefined" ? __ZCODE_AUTO_UPDATE_ENABLED__ : false;
+  typeof __ZCODE_AUTO_UPDATE_ENABLED__ !== "undefined" && !ZCODE_PURE_EDITION
+    ? __ZCODE_AUTO_UPDATE_ENABLED__
+    : false;
 
 /** 将本地运行态与编译期 ZCODE_ENV 映射为 ARMS 控制台识别的上报环境标签 */
 export function mapZCodeEnvToArmsRumEnv(runtimeEnv: ZCodeRuntimeEnv): ArmsRumEnv {
