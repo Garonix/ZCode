@@ -187,6 +187,9 @@ modules:
   - id: zcode-cli
     roots: [apps/zcode-cli]
     managed: false
+  - id: zcode-cua
+    roots: [packages/zcode-cua]
+    managed: false
   # sqlite-migrations：由 architecture:adopt 登记
   # Agent runtime 退出诊断：desktop 稳定性上报与 Host 退出提示共用的纯函数判定。
   - id: agent-crash-diagnostic
@@ -1844,6 +1847,7 @@ global:
   acceptedUpstreamSnapshot: scripts/architecture/upstream-snapshot.json
 
 exceptions:
+<<<<<<< HEAD
   - id: region-copy-suggested-prompts-edit
     rule: unmanaged-new-file
     paths: [packages/ui/src/v4/featureSuggestedPrompts.ts]
@@ -1884,11 +1888,14 @@ exceptions:
     rule: unmanaged-new-file
     paths: [apps/zcode-cli/packages/core/src/runtime/off-peak/model-binding.ts]
     reason: 已准入的闲时请求包装器仅复用共享错误码判断，补齐 3106 运行超时的既有生命周期通知；不改变 owner、控制协议或模块边界，不扩展为整个 CLI runtime 目录接管。
+=======
+>>>>>>> d96b26a3 (feat(cua): 补齐真实 Computer Use 运行时并修复帧防伪校验与 Helper 启动契约)
   - id: multi-cursor-badge-title-passthrough-edit
     rule: unmanaged-new-file
     paths:
       - apps/zcode-cli/packages/node-repl-host/src/cua-broker.ts
     reason: 已准入的 node_repl CUA broker 仅增透传可选 actionTitle 字段（node_repl cell title → badge 文字，docs/cua/producer/multi-session-cursor-overlay-spec.md §4.8）——cua-broker 按 ledger meta 构建的 requestContext 注入、parseContext 白名单补字段；签名、broker 形态与模块边界不变，不接管 zcode-cli 目录。
+<<<<<<< HEAD
   - id: conversation-share-manage-scope-passthrough-edit
     rule: unmanaged-new-file
     paths: [packages/services/src/conversation-share/conversationShareConnectionScope.ts]
@@ -1901,6 +1908,21 @@ exceptions:
     rule: unmanaged-new-file
     paths: [apps/zcode-cli/packages/core/src/runtime/helpers/conversation-quotes.ts]
     reason: 已准入的引用模型材料拼装只在引用带批注时追加一句说明（docs/ui/conversation-selection-side-chat.md「选区批注」）；仍是 withConversationQuotes 的唯一实现，canonical 正文与 Bot 投递边界不变，接管整个 core 包不在本次范围内。
+=======
+  - id: remote-model-discovery-files
+    rule: unmanaged-new-file
+    paths:
+      - packages/services/src/model-provider/remoteModelDiscoveryService.ts
+      - packages/ui/src/hooks/useRemoteModelDiscovery.ts
+      - packages/ui/src/settings/model-provider-section/FetchRemoteModelsDialog.tsx
+    reason: 增加第三方/私有模型供应商端点自动探测功能，服务下沉至 services 并提供 UI Hook 与导入弹窗。
+  - id: pure-edition-ui-feature-gates
+    rule: unmanaged-new-file
+    paths:
+      - packages/ui/src/components/marketing-touch/MarketingTouchProvider.tsx
+      - packages/ui/src/sidebar-activity/SidebarBottomActivity.tsx
+    reason: 纯净版通过 ZCODE_PURE_EDITION 控制反转旁路官方营销触达与活动通知。
+>>>>>>> d96b26a3 (feat(cua): 补齐真实 Computer Use 运行时并修复帧防伪校验与 Helper 启动契约)
   - id: side-pane-full-view-shortcut-command-edit
     rule: unmanaged-new-file
     paths: [packages/shared/src/shortcutCommands.ts]
@@ -1918,6 +1940,19 @@ exceptions:
     rule: unmanaged-new-file
     paths: [packages/zcode-cua/vitest.config.ts]
     reason: 该文件只装配测试项目，开源占位版本用于保持根单测入口可运行；不包含 producer 运行逻辑，不为同目录实现文件开放例外。
+  - id: opensource-cua-producer-runtime-files
+    rule: unmanaged-new-file
+    paths:
+      - packages/zcode-cua/dist/windows-helper.js
+      - packages/zcode-cua/vendor/dist-index.js
+      - scripts/prepare-macos-cua-helper.mjs
+    reason: 补齐 Computer Use 真实运行时（dist-index 与 windows-helper）及 macOS Helper CI 准备脚本，用于全平台编译与运行时闭环。
+  - id: opensource-tool-search-comment-cleanup
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/contracts/src/tools/tool-search.ts
+      - apps/zcode-cli/packages/core/src/tool/handlers/tool-search.ts
+    reason: 已有上游文件仅去掉两行产品对标注释；去除注释后的 TypeScript 输出与 staging 完全一致。契约、实现和模块边界不变，整目录接管不在本次开源整理范围内；后续逻辑修改须重新核对模块治理。
   - id: project-location-cache-recovery-existing-edit
     rule: unmanaged-new-file
     paths:
