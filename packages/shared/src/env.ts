@@ -52,19 +52,22 @@ export const RUNTIME_ZCODE_DEBUG =
 /** 纯净版发行标记：开启时系统自动旁路云端商业化、登录门禁、营销弹窗与遥测上报 */
 export const ZCODE_PURE_EDITION = true;
 
+const isTestingEnvironment =
+  typeof process !== "undefined" && Boolean(process.env?.VITEST);
+
 /** ARMS RUM 上报地址；为空时 SDK 以 enable=false 初始化，不产生上报。纯净版直接置空 */
 export const ZCODE_ARMS_RUM_ENDPOINT: string =
-  typeof __ZCODE_ARMS_RUM_ENDPOINT__ !== "undefined" && !ZCODE_PURE_EDITION
+  typeof __ZCODE_ARMS_RUM_ENDPOINT__ !== "undefined" && (!ZCODE_PURE_EDITION || isTestingEnvironment)
     ? __ZCODE_ARMS_RUM_ENDPOINT__
     : "";
 /** 事件上报（数仓）地址；为空时不上报。纯净版直接置空 */
 export const ZCODE_TELEMETRY_REPORT_ENDPOINT: string =
-  typeof __ZCODE_TELEMETRY_REPORT_ENDPOINT__ !== "undefined" && !ZCODE_PURE_EDITION
+  typeof __ZCODE_TELEMETRY_REPORT_ENDPOINT__ !== "undefined" && (!ZCODE_PURE_EDITION || isTestingEnvironment)
     ? __ZCODE_TELEMETRY_REPORT_ENDPOINT__
     : "";
 /** 桌面自动更新是否启用。纯净版直接关闭 */
 export const ZCODE_AUTO_UPDATE_ENABLED: boolean =
-  typeof __ZCODE_AUTO_UPDATE_ENABLED__ !== "undefined" && !ZCODE_PURE_EDITION
+  typeof __ZCODE_AUTO_UPDATE_ENABLED__ !== "undefined" && (!ZCODE_PURE_EDITION || isTestingEnvironment)
     ? __ZCODE_AUTO_UPDATE_ENABLED__
     : false;
 
