@@ -22,7 +22,10 @@ import {
   TID_MODEL_PROVIDER_NAME_INPUT,
   testId,
 } from "@zcode/shared/test-ids";
-import { InfoIcon, LockKeyholeIcon, Plus, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { InfoIcon, LockKeyholeIcon, Plus, Pencil, Trash2, MoreHorizontal, RefreshCw, Loader2Icon } from "lucide-react";
+import { toast } from "@/components/ui/toast.js";
+import { useRemoteModelDiscovery } from "@/hooks/useRemoteModelDiscovery.js";
+import { FetchRemoteModelsDialog } from "./FetchRemoteModelsDialog.js";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
 import {
@@ -363,6 +366,9 @@ export function ProviderModelsSection({
   onAddModel,
   onReorderModelIds,
   settingsRevision = 0,
+  baseUrl,
+  apiKey,
+  apiFormat,
 }: {
   providerId: string;
   providerName?: string;
@@ -380,9 +386,48 @@ export function ProviderModelsSection({
   onAddModel: (model: ProviderSettingsFormModel) => void | Promise<void>;
   onReorderModelIds?: (modelIds: string[]) => void;
   settingsRevision?: number;
+  baseUrl?: string;
+  apiKey?: string;
+  apiFormat?: string;
 }) {
   const { intl } = useZCodeIntl();
   const { providerSettingsService } = useServices();
+  const { fetching: fetchingRemote, discover, discoveredModels } = useRemoteModelDiscovery();
+  const [fetchDialogOpen, setFetchDialogOpen] = useState(false);
+
+  const handleFetchRemoteModels = useCallback(async () => {
+    const targetUrl = baseUrl?.trim();
+    if (!targetUrl) {
+      toast("请先填写 Base URL 接口地址");
+      return;
+    }
+    const foundModels = await discover({
+      baseUrl: targetUrl,
+      apiKey: apiKey?.trim(),
+      apiType: apiFormat,
+    });
+    if (foundModels && foundModels.length > 0) {
+      setFetchDialogOpen(true);
+    } else {
+      toast("未探测到可用模型列表，请确认 Base URL 与鉴权配置");
+    }
+  }, [baseUrl, apiKey, apiFormat, discover]);
+
+  const handleImportRemoteModels = useCallback(
+    async (selectedIds: string[]) => {
+      for (const id of selectedIds) {
+        await onAddModel({
+          ...createEmptyModel(),
+          modelId: id,
+          hasPersonalConfig: true,
+        });
+      }
+      setFetchDialogOpen(false);
+      toast(`已成功添加 ${selectedIds.length} 个模型`);
+    },
+    [onAddModel],
+  );
+
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
   const addSavingRef = useRef(false);
@@ -477,17 +522,36 @@ export function ProviderModelsSection({
         <span className="text-ui-base text-foreground-subtle">
           {intl.formatMessage({ id: "settings.modelProvider.models" })}
         </span>
-        <Button
-          type="button"
-          variant="secondary"
-          size="default"
-          className="rounded-lg"
-          data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
-          onClick={openAddDialog}
-        >
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
-        </Button>
+        <div className="flex items-center gap-2">
+          {baseUrl ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              className="rounded-lg gap-1.5"
+              disabled={fetchingRemote}
+              onClick={handleFetchRemoteModels}
+            >
+              {fetchingRemote ? (
+                <Loader2Icon className="size-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="size-3.5" />
+              )}
+              {fetchingRemote ? "探测中…" : "探测模型"}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="default"
+            className="rounded-lg"
+            data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
+            onClick={openAddDialog}
+          >
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
+          </Button>
+        </div>
       </div>
       {models.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-input-border bg-input">
@@ -584,6 +648,13 @@ export function ProviderModelsSection({
           }}
         />
       </>
+      <FetchRemoteModelsDialog
+        open={fetchDialogOpen}
+        onOpenChange={setFetchDialogOpen}
+        discoveredModels={discoveredModels}
+        existingModelIds={new Set(models.map((m) => m.modelId))}
+        onImport={handleImportRemoteModels}
+      />
     </div>
   );
 }

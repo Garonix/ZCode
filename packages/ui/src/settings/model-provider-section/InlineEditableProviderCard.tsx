@@ -856,6 +856,9 @@ export function InlineEditableProviderCard({
           onAddModel={handleAddModel}
           onReorderModelIds={onReorderModelIds ? handleReorderModelIds : undefined}
           settingsRevision={settingsRevision ?? 0}
+          baseUrl={baseUrlValue}
+          apiKey={apiKeyValue}
+          apiFormat={apiFormat}
         />
       </div>
     </div>
