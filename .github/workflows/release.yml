@@ -1,0 +1,225 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (留空则默认读取 package.json 版本号)'
+        required: false
+        type: string
+      build_desktop:
+        description: '是否编译全平台桌面客户端 (Win/Mac/Linux)'
+        required: false
+        type: boolean
+        default: true
+      draft:
+        description: '是否发布为草稿 (Draft)'
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: '是否发布为预发布版 (Pre-release)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  NODE_OPTIONS: "--max-old-space-size=8192"
+  ZCODE_ENV: "production"
+  ZCODE_ARMS_RUM_ENDPOINT: ""
+  ZCODE_TELEMETRY_REPORT_ENDPOINT: ""
+  ZCODE_AUTO_UPDATE_ENABLED: "false"
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: 准备远程运行时资产 (Linux 上构建，供全平台桌面随包打包)
+  # -------------------------------------------------------------
+  prepare-remote-assets:
+    name: Prepare Remote Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare Remote Server Assets
+        run: pnpm prepare:remote-assets:linux
+
+      - name: Upload Remote Assets Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-mock-cdn
+          path: packages/desktop/mock-cdn
+          if-no-files-found: error
+
+  # -------------------------------------------------------------
+  # Job 2: 多平台桌面端构建矩阵 (Windows x64 / macOS arm64 / Linux x64)
+  # -------------------------------------------------------------
+  build-desktop:
+    name: Build Desktop (${{ matrix.target_os }}-${{ matrix.target_arch }})
+    needs: prepare-remote-assets
+    if: github.event_name == 'push' || github.event.inputs.build_desktop == 'true' || github.event.inputs.build_desktop == true
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            target_os: win
+            target_arch: x64
+          - runner: macos-latest
+            target_os: mac
+            target_arch: arm64
+          - runner: ubuntu-latest
+            target_os: linux
+            target_arch: x64
+
+    steps:
+      - name: Disable Git autocrlf on Windows
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools desktop-file-utils
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Remote Assets for Bundling
+        uses: actions/download-artifact@v4
+        with:
+          name: remote-mock-cdn
+          path: packages/desktop/mock-cdn
+
+      - name: Prepare macOS CUA Helper
+        if: runner.os == 'macOS'
+        run: node scripts/prepare-macos-cua-helper.mjs ${{ matrix.target_arch }}
+
+      - name: Build Desktop package
+        run: pnpm --filter @zcode/desktop bundle -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p dist-desktop-artifacts
+          find packages/desktop/dist -maxdepth 1 \( -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) -exec cp {} dist-desktop-artifacts/ \;
+          ls -la dist-desktop-artifacts/
+
+      - name: Upload Desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-artifacts-${{ matrix.target_os }}-${{ matrix.target_arch }}
+          path: dist-desktop-artifacts/*
+          if-no-files-found: error
+
+  # -------------------------------------------------------------
+  # Job 3: 汇总所有产物并发布 GitHub Release
+  # -------------------------------------------------------------
+  publish-release:
+    name: Publish GitHub Release
+    needs: [prepare-remote-assets, build-desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: '*-artifacts*'
+          merge-multiple: true
+
+      - name: Download Remote Assets for Release
+        uses: actions/download-artifact@v4
+        with:
+          name: remote-mock-cdn
+          path: downloaded-mock-cdn
+
+      - name: Collect Remote Server Assets
+        shell: bash
+        run: |
+          if [ -d downloaded-mock-cdn/releases ]; then
+            find downloaded-mock-cdn/releases -maxdepth 2 -type f \( -name "*.tar.gz" -o -name "*.json" \) -exec cp {} release-assets/ \;
+          fi
+          ls -la release-assets/
+
+      - name: Generate SHA256 Checksums
+        shell: bash
+        run: |
+          cd release-assets
+          # 为所有打包二进制文件生成统一摘要
+          sha256sum * > SHA256SUMS.txt || true
+          cat SHA256SUMS.txt
+
+      - name: Determine Tag Name
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            PKG_VERSION=$(node -p "require('./package.json').version")
+            TAG="v${PKG_VERSION}"
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Target Release Tag: ${TAG}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
+          files: |
+            release-assets/*
+          draft: ${{ github.event.inputs.draft == 'true' }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          generate_release_notes: true

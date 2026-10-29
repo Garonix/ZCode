@@ -75,3 +75,7 @@ packages/desktop/resources/macos-window-bounds/
 __pycache__/
 *.pyc
 .zcode-runtime
+
+# Docker 本地挂载目录
+/data/
+/workspace/
