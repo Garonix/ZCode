@@ -2,6 +2,7 @@ import { MarketingBanner } from "@/components/marketing-touch/MarketingTouchProv
 import { useMarketingBannerVisible } from "@/components/marketing-touch/useMarketingBannerVisible.js";
 import { GlobalNoticeSurface } from "@/global-notice/GlobalNoticeSurface.js";
 import type { GlobalNoticeStore } from "@/global-notice/globalNoticeStore.js";
+import { ZCODE_PURE_EDITION } from "@zcode/shared";
 
 /**
  * 左下角活动共享槽位的仲裁层：整个 UI 中唯一同时依赖营销触达与全局通知两套系统的地方，
@@ -16,6 +17,9 @@ export function SidebarBottomActivity({
 }: {
   noticeStore?: GlobalNoticeStore | null;
 } = {}) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
   const bannerVisible = useMarketingBannerVisible();
   if (bannerVisible) return <MarketingBanner />;
   // 未注入时走 GlobalNoticeSurface 默认的 browserGlobalNoticeStore。
