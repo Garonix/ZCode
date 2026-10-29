@@ -22,7 +22,16 @@ import {
   TID_MODEL_PROVIDER_NAME_INPUT,
   testId,
 } from "@zcode/shared/test-ids";
-import { InfoIcon, LockKeyholeIcon, Plus, Pencil, Trash2, MoreHorizontal, RefreshCw, Loader2Icon } from "lucide-react";
+import {
+  InfoIcon,
+  LockKeyholeIcon,
+  Plus,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  RefreshCw,
+  Loader2Icon,
+} from "lucide-react";
 import { toast } from "@/components/ui/toast.js";
 import { useRemoteModelDiscovery } from "@/hooks/useRemoteModelDiscovery.js";
 import { FetchRemoteModelsDialog } from "./FetchRemoteModelsDialog.js";
