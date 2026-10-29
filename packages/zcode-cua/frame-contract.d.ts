@@ -4,6 +4,9 @@ export const OFFICIAL_CUA_IMAGE_INLINE_BASE64_BYTES: number;
 
 export declare function isOfficialCuaImageRefText(text: string): boolean;
 export declare function containsOfficialCuaImageRefCredentialText(text: string): boolean;
+export declare function extractOfficialCuaImageRefTexts(
+  text: string,
+): { refs: string[]; remainingText: string };
 export declare function containsImageRefAuthority(text: string): boolean;
 export declare function parseOfficialCuaImageRef(text: string): { authority: string } | undefined;
 export declare function readRasterEnvelopeIdentity(

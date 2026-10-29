@@ -67,6 +67,9 @@ modules:
   - id: zcode-cli
     roots: [apps/zcode-cli]
     managed: false
+  - id: zcode-cua
+    roots: [packages/zcode-cua]
+    managed: false
   # sqlite-migrations：由 architecture:adopt 登记
   - id: conversation-telemetry-engine
     roots: [packages/shared/src/conversation-telemetry]
@@ -1181,35 +1184,24 @@ global:
   acceptedUpstreamSnapshot: scripts/architecture/upstream-snapshot.json
 
 exceptions:
-  - id: session-features-attribution-header-edit
-    rule: unmanaged-new-file
-    paths: [apps/zcode-cli/packages/adapters/src/model/runner-attribution.ts]
-    reason: 已准入的归因头构造器只追加 x-zcode-session-features（docs/design/v2/model/session-features-header.md）；它仍是全部归因头的唯一写入点，签名与模块边界不变，接管整个 adapters 包不在本次范围内。
-  - id: session-features-workflow-command-pattern-edit
-    rule: unmanaged-new-file
-    paths: [apps/zcode-cli/packages/core/src/runtime/methods/dynamic-workflow-activation.ts]
-    reason: 已准入的动态工作流激活只导出既有 `/workflow` 历史判据常量，供 session-features 的历史推导复用同一判据；激活行为、owner 与模块边界不变。
-  - id: node-repl-call-ledger-cua-bridge-edit
-    rule: unmanaged-new-file
-    paths: [apps/zcode-cli/packages/node-repl-host/src/cua-bridge.ts]
-    reason: 已准入的 node_repl CUA bridge 只删去 Worker 侧的会话信息构造与目标应用身份记录，二者移到主线程 CUA broker（apps/zcode-cli/docs/design/v2/tool/20-node-repl-call-ledger.md）；subagent 拒绝与对模型的行为不变，接管整个 node-repl-host 包不在本次范围内。
-  - id: node-repl-call-ledger-cua-broker-edit
-    rule: unmanaged-new-file
-    paths: [apps/zcode-cli/packages/node-repl-host/src/cua-broker.ts]
-    reason: 已准入的 node_repl CUA broker 改为只认 node-repl-call-ledger 签发的本次调用 token，按账本条目构造会话信息并把目标应用身份记进账本（20-node-repl-call-ledger.md「CUA broker」）；MR !3207 再在 token 校验之后把会话能力标签用的 computerUse 记进账本（docs/design/v2/model/session-features-header.md）；runtime 调用与响应格式不变。
-  - id: node-repl-call-ledger-result-edit
-    rule: unmanaged-new-file
-    paths: [apps/zcode-cli/packages/node-repl-host/src/result.ts]
-    reason: 已准入的 node_repl 结果组装改为只从账本 facts 取可信 key，忽略 Worker 结果消息里的同名字段（20-node-repl-call-ledger.md「结果组装」）；MR !3207 按同样处置追加 zcode/nodeReplBrowserUse、zcode/nodeReplComputerUse 两个 key（docs/design/v2/model/session-features-header.md）；结果内容与其他 meta 处置不变。
-  - id: offpeak-expiration-codes-existing-edit
-    rule: unmanaged-new-file
-    paths: [apps/zcode-cli/packages/core/src/runtime/off-peak/model-binding.ts]
-    reason: 已准入的闲时请求包装器仅复用共享错误码判断，补齐 3106 运行超时的既有生命周期通知；不改变 owner、控制协议或模块边界，不扩展为整个 CLI runtime 目录接管。
   - id: multi-cursor-badge-title-passthrough-edit
     rule: unmanaged-new-file
     paths:
       - apps/zcode-cli/packages/node-repl-host/src/cua-broker.ts
     reason: 已准入的 node_repl CUA broker 仅增透传可选 actionTitle 字段（node_repl cell title → badge 文字，docs/cua/producer/multi-session-cursor-overlay-spec.md §4.8）——cua-broker 按 ledger meta 构建的 requestContext 注入、parseContext 白名单补字段；签名、broker 形态与模块边界不变，不接管 zcode-cli 目录。
+  - id: remote-model-discovery-files
+    rule: unmanaged-new-file
+    paths:
+      - packages/services/src/model-provider/remoteModelDiscoveryService.ts
+      - packages/ui/src/hooks/useRemoteModelDiscovery.ts
+      - packages/ui/src/settings/model-provider-section/FetchRemoteModelsDialog.tsx
+    reason: 增加第三方/私有模型供应商端点自动探测功能，服务下沉至 services 并提供 UI Hook 与导入弹窗。
+  - id: pure-edition-ui-feature-gates
+    rule: unmanaged-new-file
+    paths:
+      - packages/ui/src/components/marketing-touch/MarketingTouchProvider.tsx
+      - packages/ui/src/sidebar-activity/SidebarBottomActivity.tsx
+    reason: 纯净版通过 ZCODE_PURE_EDITION 控制反转旁路官方营销触达与活动通知。
   - id: side-pane-full-view-shortcut-command-edit
     rule: unmanaged-new-file
     paths: [packages/shared/src/shortcutCommands.ts]
@@ -1222,6 +1214,19 @@ exceptions:
     rule: unmanaged-new-file
     paths: [packages/zcode-cua/vitest.config.ts]
     reason: 该文件只装配测试项目，开源占位版本用于保持根单测入口可运行；不包含 producer 运行逻辑，不为同目录实现文件开放例外。
+  - id: opensource-cua-producer-runtime-files
+    rule: unmanaged-new-file
+    paths:
+      - packages/zcode-cua/dist/windows-helper.js
+      - packages/zcode-cua/vendor/dist-index.js
+      - scripts/prepare-macos-cua-helper.mjs
+    reason: 补齐 Computer Use 真实运行时（dist-index 与 windows-helper）及 macOS Helper CI 准备脚本，用于全平台编译与运行时闭环。
+  - id: opensource-tool-search-comment-cleanup
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/contracts/src/tools/tool-search.ts
+      - apps/zcode-cli/packages/core/src/tool/handlers/tool-search.ts
+    reason: 已有上游文件仅去掉两行产品对标注释；去除注释后的 TypeScript 输出与 staging 完全一致。契约、实现和模块边界不变，整目录接管不在本次开源整理范围内；后续逻辑修改须重新核对模块治理。
   - id: project-location-cache-recovery-existing-edit
     rule: unmanaged-new-file
     paths:

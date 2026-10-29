@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import type { Stats } from "node:fs";
 import * as fs from "node:fs/promises";
-import { isAbsolute, join, relative, resolve, sep, win32 as windowsPath } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep, win32 as windowsPath } from "node:path";
 
 const DEV_ROOT_ENV = "ZCODE_CUA_DEV_ROOT";
 const EXPECTED_PACKAGE_NAME = "@zcode/zcode-cua";
@@ -166,14 +166,32 @@ async function resolvePackagedRuntime(
 ): Promise<WindowsCuaRuntime> {
   const processResourcesPath = (process as NodeJS.Process & { resourcesPath?: string })
     .resourcesPath;
-  const resourcesPath = (options.resourcesPath ?? processResourcesPath)?.trim();
+  let resourcesPath = (
+    options.resourcesPath ??
+    processResourcesPath ??
+    (options.env ?? process.env).ZCODE_RESOURCES_PATH
+  )?.trim();
+
+  if (!resourcesPath && (options.platform ?? process.platform) === "win32" && process.execPath) {
+    const candidate = join(dirname(process.execPath), "resources");
+    try {
+      const candidateRoot = resolve(candidate, ...PRODUCT_RUNTIME_SEGMENTS);
+      const stat = await fileSystem.stat(candidateRoot);
+      if (stat.isDirectory()) {
+        resourcesPath = candidate;
+      }
+    } catch {
+      // 候选路径不存在时保持 undefined，交由下方抛出 missing-resources-path 错误
+    }
+  }
+
   if (!resourcesPath) {
     throw new WindowsCuaDevRuntimeResolutionError(
       "missing-resources-path",
       "Windows CUA packaged runtime requires resourcesPath.",
     );
   }
-  if (!isAbsolute(resourcesPath)) {
+  if (!isAbsolute(resourcesPath) && !windowsPath.isAbsolute(resourcesPath)) {
     throw new WindowsCuaDevRuntimeResolutionError(
       "resources-path-not-absolute",
       "Windows CUA packaged runtime resourcesPath must be absolute.",
