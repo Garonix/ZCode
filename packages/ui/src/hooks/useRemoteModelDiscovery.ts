@@ -1,8 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  fetchRemoteProviderModels,
-  type FetchRemoteModelsResult,
-} from "@zcode/services";
+import { fetchRemoteProviderModels, type FetchRemoteModelsResult } from "@zcode/services";
 
 export function useRemoteModelDiscovery() {
   const [fetching, setFetching] = useState(false);
