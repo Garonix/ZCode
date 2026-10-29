@@ -102,11 +102,11 @@ export function FetchRemoteModelsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg overflow-hidden sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {isZh ? "自动探测可用模型" : "Discovered Models"}
-          </DialogTitle>
+          <DialogTitle>{isZh ? "自动探测可用模型" : "Discovered Models"}</DialogTitle>
           <DialogDescription className="sr-only">
-            {isZh ? "从远端接口探测并批量勾选导入模型" : "Select models to import from remote provider"}
+            {isZh
+              ? "从远端接口探测并批量勾选导入模型"
+              : "Select models to import from remote provider"}
           </DialogDescription>
         </DialogHeader>
 

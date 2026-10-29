@@ -176,6 +176,8 @@ export async function fetchRemoteProviderModels(
     models: [],
     error:
       lastErrorMessage ??
-      (lastStatus ? `请求失败 (HTTP ${lastStatus})` : "未能从该地址探测到可用模型列表，请确认 Base URL 是否正确"),
+      (lastStatus
+        ? `请求失败 (HTTP ${lastStatus})`
+        : "未能从该地址探测到可用模型列表，请确认 Base URL 是否正确"),
   };
 }
