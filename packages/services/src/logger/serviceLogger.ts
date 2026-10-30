@@ -24,7 +24,10 @@ export function createServiceLogger(
     isDebugEnabled?: boolean | (() => boolean);
   },
 ): ServiceLogger {
-  const pid = options?.pid ?? process.pid;
+  // 修复原因：浏览器渲染进程或纯前端环境中全局无 Node.js process 对象，直接访问 process.pid
+  // 会在顶层模块加载或工厂调用时抛出 ReferenceError 导致白屏。因此在 process 未定义时回退为 undefined，
+  // 由 formatLogPrefix 生成省略 pid 的安全前缀。
+  const pid = options?.pid ?? (typeof process !== "undefined" ? process.pid : undefined);
   const sink = options?.sink ?? console;
   const debugOption = options?.isDebugEnabled;
   const resolveDebugEnabled: () => boolean =

@@ -66,14 +66,17 @@ vi.mock("@/web-remote-control/index.js", () => ({
   WebRemoteControlDialog: ({
     initialTaskId,
     remoteSessionId,
+    showScanCard,
   }: {
     initialTaskId?: string;
     remoteSessionId?: string;
+    showScanCard?: boolean;
   }) =>
     createElement("div", {
       "data-testid": "web-remote-control-dialog",
       "data-initial-task-id": initialTaskId ?? "",
       "data-remote-session-id": remoteSessionId ?? "",
+      "data-show-scan-card": String(showScanCard),
     }),
 }));
 
@@ -84,10 +87,18 @@ async function renderTriggerWithEnv(
     featureEnabled?: boolean;
     workspaceIdentity?: string;
     remoteSessionId?: string;
+    pureEdition?: boolean;
   },
 ) {
   vi.resetModules();
-  vi.doMock("@zcode/shared", () => ({ ZCODE_ENV: env }));
+  vi.doMock("@zcode/shared", async (importOriginal) => {
+    const original = await importOriginal<typeof import("@zcode/shared")>();
+    return {
+      ...original,
+      ZCODE_ENV: env,
+      ZCODE_PURE_EDITION: options?.pureEdition ?? false,
+    };
+  });
 
   const { WorkspaceWebRemoteControlTrigger } =
     await import("../src/WorkspaceWebRemoteControlTrigger.js");
@@ -159,5 +170,16 @@ describe("WorkspaceWebRemoteControlTrigger", () => {
     expect(html).toContain('data-tooltip-title="webRemoteControl.trigger"');
     expect(html).toContain('data-tooltip-description="webRemoteControl.triggerStatus.idle"');
     expect(html).not.toContain('data-tooltip-title="webRemoteControl.triggerStatus.idle"');
+  });
+
+  it("纯净版下入口不隐藏，tooltip 提示 Bot 描述并向弹层传递 showScanCard=false", async () => {
+    const html = await renderTriggerWithEnv("production", {
+      pureEdition: true,
+    });
+
+    expect(html).toContain("webRemoteControl.trigger");
+    expect(html).toContain('data-tooltip-title="webRemoteControl.trigger"');
+    expect(html).toContain('data-tooltip-description="webRemoteControl.botChannel.description"');
+    expect(html).toContain('data-show-scan-card="false"');
   });
 });

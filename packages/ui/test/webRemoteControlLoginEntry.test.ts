@@ -71,7 +71,12 @@ function openDialog(onOpenChange = vi.fn()) {
     state.loginEntryRequest = { id: 1, providerId, purpose };
   });
   return render(
-    createElement(WebRemoteControlDialog, { open: true, onOpenChange, workspacePath: "/project" }),
+    createElement(WebRemoteControlDialog, {
+      open: true,
+      onOpenChange,
+      workspacePath: "/project",
+      showScanCard: true,
+    }),
   );
 }
 
@@ -125,6 +130,7 @@ it("已有用户但provider不可读时保留弹窗并重新读取，避免进�
       open: true,
       onOpenChange: (open: boolean) => onOpenChange(open),
       workspacePath: "/project",
+      showScanCard: true,
     }),
   );
   fireEvent.click(await view.findByTestId("web-remote-control-login"));

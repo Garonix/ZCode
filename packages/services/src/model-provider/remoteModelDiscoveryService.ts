@@ -1,12 +1,20 @@
-import { createServiceLogger } from "#src/logger/serviceLogger.js";
-
-const logger = createServiceLogger("remote-model-discovery");
+// 修复原因：此模块被 packages/services/src/index.ts 重新导出并在浏览器渲染进程（packages/ui）中使用。
+// 原先在模块顶层直接调用 createServiceLogger("remote-model-discovery")，会把依赖 Node.js process.pid
+// 的服务日志模块打进渲染包并在初始化时立即执行，导致缺少 process 全局变量的渲染主页报 ReferenceError 白屏。
+// 本模块保持为纯浏览器安全工具函数，日志改为通过 input.logger 动态注入或保持静默。
 
 export interface FetchRemoteModelsInput {
   baseUrl: string;
   apiKey?: string;
   apiType?: string;
   timeoutMs?: number;
+  /** 可选注入的日志器，兼容浏览器 packages/ui/src/logger 或 Node 服务层 logger */
+  logger?: {
+    info?: (...args: unknown[]) => void;
+    warn?: (...args: unknown[]) => void;
+    error?: (...args: unknown[]) => void;
+    debug?: (...args: unknown[]) => void;
+  };
 }
 
 export interface FetchRemoteModelsResult {
@@ -144,7 +152,9 @@ export async function fetchRemoteProviderModels(
         const json = await response.json();
         const models = extractModelIds(json);
         if (models.length > 0) {
-          logger.info?.(`[remoteModelDiscovery] 成功从 ${endpoint} 发现 ${models.length} 个模型`);
+          input.logger?.info?.(
+            `[remoteModelDiscovery] 成功从 ${endpoint} 发现 ${models.length} 个模型`,
+          );
           return {
             success: true,
             models,
@@ -162,7 +172,9 @@ export async function fetchRemoteProviderModels(
       }
     } catch (err: unknown) {
       const error = err as Error;
-      logger.info?.(`[remoteModelDiscovery] 请求端点失败: ${endpoint}, 原因: ${error?.message}`);
+      input.logger?.info?.(
+        `[remoteModelDiscovery] 请求端点失败: ${endpoint}, 原因: ${error?.message}`,
+      );
       if (error.name === "TimeoutError") {
         lastErrorMessage = `请求超时 (${Math.round(timeoutMs / 1000)}s)，请检查网络连接或端点是否响应`;
       } else {

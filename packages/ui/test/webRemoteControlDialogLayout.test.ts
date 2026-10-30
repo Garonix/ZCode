@@ -114,6 +114,7 @@ describe("WebRemoteControlDialog layout", () => {
         open: true,
         onOpenChange,
         workspacePath: "/tmp/project",
+        showScanCard: true,
       }),
     );
     const login = await view.findByRole("button", { name: "webRemoteControl.authRequired.login" });
@@ -138,6 +139,7 @@ describe("WebRemoteControlDialog layout", () => {
         open: true,
         onOpenChange: vi.fn(),
         workspacePath: "/tmp/project",
+        showScanCard: true,
       }),
     );
     await view.findByRole("button", { name: "webRemoteControl.authRequired.login" });
@@ -151,6 +153,7 @@ describe("WebRemoteControlDialog layout", () => {
         open: true,
         onOpenChange: vi.fn(),
         workspacePath: "/tmp/project",
+        showScanCard: true,
       }),
     );
 
@@ -250,11 +253,13 @@ describe("WebRemoteControlDialog layout", () => {
   });
 
   it("renders phone QR and bot channel entry cards in the remote control dialog", () => {
+    // 显式传入 showScanCard: true 测试开启扫码卡片时的双栏完整布局
     const html = renderToStaticMarkup(
       createElement(WebRemoteControlDialog, {
         open: true,
         onOpenChange: vi.fn(),
         workspacePath: "/tmp/project",
+        showScanCard: true,
       }),
     );
 
@@ -280,12 +285,35 @@ describe("WebRemoteControlDialog layout", () => {
     expect(openBotsIndex).toBeGreaterThan(telegramIndex);
   });
 
-  it("merges status and copy link inside the Scan from phone card", () => {
+  it("纯净版默认隐藏扫码卡片，仅保留 Bot 渠道与管理入口且不触发启动", () => {
+    // 纯净版断开外部 Relay，隐藏扫码卡片，仅保留移动端 Bot 入口
     const html = renderToStaticMarkup(
       createElement(WebRemoteControlDialog, {
         open: true,
         onOpenChange: vi.fn(),
         workspacePath: "/tmp/project",
+      }),
+    );
+
+    expect(html).not.toContain('data-testid="web-remote-control-scan-card"');
+    expect(html).not.toContain("webRemoteControl.mobileQr.title");
+    expect(html).toContain("webRemoteControl.botChannel.title");
+    expect(html).toContain("webRemoteControl.botChannel.weixin.title");
+    expect(html).toContain("webRemoteControl.botChannel.feishu.title");
+    expect(html).toContain("webRemoteControl.botChannel.lark.title");
+    expect(html).toContain("webRemoteControl.botChannel.telegram.title");
+    expect(html).toContain('data-testid="web-remote-control-open-bots"');
+    expect(html).toContain("webRemoteControl.botChannel.manageBots");
+  });
+
+  it("merges status and copy link inside the Scan from phone card", () => {
+    // 显式传入 showScanCard: true 测试扫码卡片内部的状态与复制链接
+    const html = renderToStaticMarkup(
+      createElement(WebRemoteControlDialog, {
+        open: true,
+        onOpenChange: vi.fn(),
+        workspacePath: "/tmp/project",
+        showScanCard: true,
       }),
     );
 
@@ -305,11 +333,13 @@ describe("WebRemoteControlDialog layout", () => {
   });
 
   it("V2弹窗只保留复制链接，移除刷新二维码入口", () => {
+    // 显式传入 showScanCard: true 测试扫码卡片中的链接复制按钮
     const html = renderToStaticMarkup(
       createElement(WebRemoteControlDialog, {
         open: true,
         onOpenChange: vi.fn(),
         workspacePath: "/tmp/project",
+        showScanCard: true,
       }),
     );
     expect(html).toContain("webRemoteControl.copyLink</button>");

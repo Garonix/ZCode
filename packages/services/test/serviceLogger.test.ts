@@ -52,6 +52,38 @@ describe("createServiceLogger", () => {
 
     expect(sink.debug).toHaveBeenCalledTimes(1);
   });
+
+  it("在缺少全局 process 的环境（如浏览器页面）下安全初始化且前缀不含 pid", () => {
+    const originalProcess = globalThis.process;
+    try {
+      // 模拟浏览器渲染页环境：无全局 process
+      // @ts-expect-error 故意置空以模拟浏览器运行时
+      delete globalThis.process;
+      const sink = createSink();
+      const logger = createServiceLogger("browser-scope", { sink });
+      logger.info(undefined, "hello from renderer");
+      expect(sink.log).toHaveBeenCalledTimes(1);
+      const logLine = sink.log.mock.calls[0][0] as string;
+      expect(logLine).toContain("[browser-scope]");
+      expect(logLine).not.toContain("[pid:");
+    } finally {
+      globalThis.process = originalProcess;
+    }
+  });
+
+  it("在缺少全局 process 的环境下 isEffectiveDevelopmentNodeEnv 安全回退 false", async () => {
+    const originalProcess = globalThis.process;
+    try {
+      // @ts-expect-error 故意置空以模拟浏览器运行时
+      delete globalThis.process;
+      const { isEffectiveDevelopmentNodeEnv, resolveEffectiveNodeEnv } =
+        await import("../src/runtime-tools/nodeEnv.js");
+      expect(isEffectiveDevelopmentNodeEnv()).toBe(false);
+      expect(resolveEffectiveNodeEnv()).toBe("production");
+    } finally {
+      globalThis.process = originalProcess;
+    }
+  });
 });
 
 function createSink() {
