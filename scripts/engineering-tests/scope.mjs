@@ -31,9 +31,22 @@ async function resolvePushBase(root, head, remote) {
 }
 
 async function firstPushBase(root, head) {
-  // 首次推送没有 remote SHA；只使用已确认的集成分支，缺失时严格报错，不猜测其他分支。
-  const staging = await commit(root, "origin/staging");
-  return (await git(root, ["merge-base", staging, head])).toString().trim();
+  // 首次推送没有 remote SHA；内网优先使用 origin/staging，开源/fork 仓库优雅回退至 origin/main 或 upstream/main。
+  let baseRef = "origin/staging";
+  try {
+    const staging = await commit(root, baseRef);
+    return (await git(root, ["merge-base", staging, head])).toString().trim();
+  } catch {
+    try {
+      baseRef = "origin/main";
+      const mainRef = await commit(root, baseRef);
+      return (await git(root, ["merge-base", mainRef, head])).toString().trim();
+    } catch {
+      baseRef = "upstream/main";
+      const upstreamRef = await commit(root, baseRef);
+      return (await git(root, ["merge-base", upstreamRef, head])).toString().trim();
+    }
+  }
 }
 
 /** 只解析比较基线；改动文件与关联测试全部由 Vitest 官方选择。 */
