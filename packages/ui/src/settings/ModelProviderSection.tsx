@@ -1135,11 +1135,13 @@ export function ModelProviderSection({
           })}
         </p>
       ) : null}
-      {templatePickerOpen ? (
+      {templatePickerOpen || (!loading && modelProviders.length === 0) ? (
+        // 用户主动添加或初次使用（尚无任何供应商）时直接展示添加供应商页面；
+        // 尚无供应商时不显示返回箭头，避免出现无限“加载中……”误导用户。
         <ProviderTemplatePicker
-          templates={providerTemplates}
+          templates={providerTemplates ?? []}
           creating={creatingProvider}
-          onBack={() => setTemplatePickerOpen(false)}
+          onBack={modelProviders.length > 0 ? () => setTemplatePickerOpen(false) : undefined}
           onCreateFromTemplate={(templateId) => {
             return handleCreateProvider({ templateId });
           }}
