@@ -19,34 +19,41 @@ async function isAncestor(root, ancestor, head) {
   return check.code === 0;
 }
 
-// rebase / force-push 后远端 SHA 不再是 HEAD 的祖先；直接拿它当基线会让 Vitest
-// 找不到公共祖先而退化成全量选择。回退到双方 merge-base，永远给官方选择一个
-// 真实分叉点（最坏也只是比严格推送范围多选 staging 侧的新增改动，不会全量）。
+async function tryMergeBase(root, ref, head) {
+  try {
+    const sha = await commit(root, ref);
+    const result = await run("git", ["merge-base", sha, head], { cwd: root, allowFailure: true });
+    if (result.code === 0 && result.stdout.toString().trim()) {
+      return result.stdout.toString().trim();
+    }
+  } catch {
+    // 忽略无法解析的 ref
+  }
+  return null;
+}
+
+// 修复原因：当分支被 force push 替换历史（如上游断代重构与孤立分支重建）时，
+// remote 与 HEAD 可能无公共祖先，导致原生 git merge-base 退出码为 1 抛出异常。
+// 修复依据：若与 remote 无公共祖先，优雅回退至候选公共基线（origin/staging -> origin/main -> upstream/main -> head）。
 async function resolvePushBase(root, head, remote) {
   if (await isAncestor(root, remote, head)) {
     return remote;
   }
 
-  return (await git(root, ["merge-base", remote, head])).toString().trim();
+  const base = await tryMergeBase(root, remote, head);
+  if (base) {
+    return base;
+  }
+  return await firstPushBase(root, head);
 }
 
 async function firstPushBase(root, head) {
-  // 首次推送没有 remote SHA；内网优先使用 origin/staging，开源/fork 仓库优雅回退至 origin/main 或 upstream/main。
-  let baseRef = "origin/staging";
-  try {
-    const staging = await commit(root, baseRef);
-    return (await git(root, ["merge-base", staging, head])).toString().trim();
-  } catch {
-    try {
-      baseRef = "origin/main";
-      const mainRef = await commit(root, baseRef);
-      return (await git(root, ["merge-base", mainRef, head])).toString().trim();
-    } catch {
-      baseRef = "upstream/main";
-      const upstreamRef = await commit(root, baseRef);
-      return (await git(root, ["merge-base", upstreamRef, head])).toString().trim();
-    }
+  // 首次推送没有 remote SHA 或历史断代；内网优先使用 origin/staging，开源/fork 仓库优雅回退至 origin/main、upstream/main 或当前 head。
+  for (const candidate of ["origin/staging", "origin/main", "upstream/main"]) {
+    const base = await tryMergeBase(root, candidate, head);
+    if (base) return base;
   }
+  return head;
 }
 
 /** 只解析比较基线；改动文件与关联测试全部由 Vitest 官方选择。 */
