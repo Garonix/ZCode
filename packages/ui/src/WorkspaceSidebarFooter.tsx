@@ -469,7 +469,8 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex shrink-0 items-center gap-1.5">
-          {!ZCODE_PURE_EDITION && isDesktop && workspacePath ? (
+          {/* 纯净版不再隐藏手机功能入口，保留移动端 Bot 入口 */}
+          {isDesktop && workspacePath ? (
             <WorkspaceWebRemoteControlTrigger
               workspacePath={workspacePath}
               workspaceIdentity={workspaceIdentity}
