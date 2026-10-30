@@ -38,7 +38,6 @@ import {
   Maximize,
   Palette,
   Settings,
-  User,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
@@ -160,26 +159,18 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
       toast(intl.formatMessage({ id: "sidebar.profile.userIdCopyFailed" }));
     }
   };
+  // 纯净版或未登录时不显示占位头像框；仅在非纯净版且存在已登录用户时展示头像。
+  const showAvatar = !ZCODE_PURE_EDITION && Boolean(user);
   const profileContent = (
     <>
-      <Avatar key={avatarKey} size="default">
-        {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={profileBadge} /> : null}
-        <AvatarFallback className="bg-background text-foreground">
-          {user ? (
-            avatarFallbackText
-          ) : showAuthRestoreLoading ? (
-            <>
-              {/* Bugfix: OAuth 启动恢复未落定前，footer 之前会直接显示未登录头像，
-                  用户很容易把“还在校验”误判成“已经退出”。
-                  这里用 loading 图标明确表达“状态确认中”，等恢复成功或失败后再展示最终状态。 */}
-              <Loader2 className="size-4 animate-spin" />
-              <span className="sr-only">{intl.formatMessage({ id: "common.loading" })}</span>
-            </>
-          ) : (
-            <User className="size-4" />
-          )}
-        </AvatarFallback>
-      </Avatar>
+      {showAvatar ? (
+        <Avatar key={avatarKey} size="default">
+          {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={profileBadge} /> : null}
+          <AvatarFallback className="bg-background text-foreground">
+            {avatarFallbackText}
+          </AvatarFallback>
+        </Avatar>
+      ) : null}
       <div className="min-w-0 flex-1 overflow-hidden text-left">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="min-w-0 truncate text-ui-base font-semibold text-foreground">
@@ -245,7 +236,10 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
               type="button"
               variant="ghost"
               size={"lg"}
-              className="min-w-0 flex-1 justify-start gap-2 overflow-hidden rounded-tl-2xl rounded-bl-2xl border-0 pl-0"
+              className={cn(
+                "min-w-0 flex-1 justify-start gap-2 overflow-hidden rounded-tl-2xl rounded-bl-2xl border-0",
+                showAvatar ? "pl-0" : "px-2",
+              )}
               data-testid={TID_LOGIN_TRIGGER}
               aria-label={profileBadge}
             >

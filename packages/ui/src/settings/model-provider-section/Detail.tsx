@@ -393,7 +393,9 @@ export function ModelProviderSectionDetail({
   }, [selectedItemKey]);
 
   if (!selectedNavItem) {
-    return <ModelProviderLoadingCard loadingLabel={loadingLabel} />;
+    // 未选中任何导航项时不再渲染持续旋转的 loading 卡片，避免误导用户处于加载中；
+    // 空态/落地态由外层 ModelProviderSection 渲染 ProviderTemplatePicker 或由用户主动选择。
+    return null;
   }
 
   if (selectedNavItem.type === "preset") {
