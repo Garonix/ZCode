@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { fetchRemoteProviderModels, type FetchRemoteModelsResult } from "@zcode/services";
+import { logger } from "../logger.js";
 
 export function useRemoteModelDiscovery() {
   const [fetching, setFetching] = useState(false);
@@ -11,7 +12,10 @@ export function useRemoteModelDiscovery() {
       setFetching(true);
       setError(null);
       try {
-        const res: FetchRemoteModelsResult = await fetchRemoteProviderModels(options);
+        const res: FetchRemoteModelsResult = await fetchRemoteProviderModels({
+          ...options,
+          logger,
+        });
         if (res.success && res.models.length > 0) {
           setDiscoveredModels(res.models);
           return res.models;

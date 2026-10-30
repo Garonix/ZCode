@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Smartphone } from "lucide-react";
 import type { WebRemoteControlStatus } from "@zcode/shared";
 import {
+  ZCODE_PURE_EDITION,
   buildWebRemoteControlEntryViewTelemetry,
   parseRemoteWorkspaceIdentity,
 } from "@zcode/shared";
@@ -135,17 +136,24 @@ function WorkspaceWebRemoteControlTriggerContent({
   // resolver 按 identity 校验后的 live session，未恢复时让弹层保持 remote-waiting。
   const currentRemoteSessionId = mappedRemoteSessionId ?? undefined;
   const [webRemoteControlOpen, setWebRemoteControlOpen] = useState(false);
-  const remoteControlStatus = useWebRemoteControlStatus();
+  // 修复原因：纯净版下依赖云端 relay 的远控功能已关闭，避免发起无效的状态轮询请求
+  const remoteControlStatus = useWebRemoteControlStatus({
+    enabled: !ZCODE_PURE_EDITION,
+  });
   const triggerPresentation = getWebRemoteControlTriggerPresentation(
     remoteControlStatus,
     intl.formatMessage,
   );
+  // 纯净版中模态框仅保留 Bot 功能，tooltip 描述同步调整为聊天 Bot 描述，避免提示“远程控制未开启”
+  const tooltipDescription = ZCODE_PURE_EDITION
+    ? intl.formatMessage({ id: "webRemoteControl.botChannel.description" })
+    : triggerPresentation.tooltip;
 
   return (
     <>
       <ControlHintTooltip
         title={intl.formatMessage({ id: "webRemoteControl.trigger" })}
-        description={triggerPresentation.tooltip}
+        description={tooltipDescription}
         side="top"
         align="center"
         triggerClassName={compact ? undefined : "w-full"}
@@ -203,6 +211,7 @@ function WorkspaceWebRemoteControlTriggerContent({
         workspaceIdentity={workspaceIdentity}
         remoteSessionId={currentRemoteSessionId}
         initialTaskId={initialTaskId}
+        showScanCard={!ZCODE_PURE_EDITION}
       />
     </>
   );
