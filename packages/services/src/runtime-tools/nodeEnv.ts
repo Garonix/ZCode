@@ -2,8 +2,11 @@ import { resolveZCodeRuntimeEnv } from "@zcode/shared";
 
 export type EffectiveNodeEnv = "development" | "production";
 
+// 浏览器渲染进程中无 Node.js process 对象，兜底为 {} 避免在无全局 process 时抛出 ReferenceError
+const defaultEnv = typeof process !== "undefined" ? process.env : {};
+
 export function resolveEffectiveNodeEnv(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = defaultEnv,
 ): EffectiveNodeEnv {
   const runtimeEnv = resolveZCodeRuntimeEnv(env);
   // NODE_ENV 是用户 shell 和 Node 生态都会使用的通用变量，不能作为 ZCode 运行时判据。
@@ -13,7 +16,7 @@ export function resolveEffectiveNodeEnv(
 }
 
 export function isEffectiveDevelopmentNodeEnv(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = defaultEnv,
 ): boolean {
   return resolveEffectiveNodeEnv(env) === "development";
 }

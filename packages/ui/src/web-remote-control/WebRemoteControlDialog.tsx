@@ -10,7 +10,8 @@ import {
 } from "@/web-remote-control/domain/presentation.js";
 import { memo, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { DesktopCommandIds, type BotProvider, type WebRemoteControlStatus } from "@zcode/shared";
+import { DesktopCommandIds, ZCODE_PURE_EDITION, type BotProvider, type WebRemoteControlStatus } from "@zcode/shared";
+import { cn } from "@/components/lib/utils.js";
 import {
   Bot as BotIcon,
   CopyIcon,
@@ -85,6 +86,7 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
   workspaceIdentity,
   remoteSessionId,
   initialTaskId,
+  showScanCard = !ZCODE_PURE_EDITION,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -92,6 +94,8 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
   workspaceIdentity?: string;
   remoteSessionId?: string;
   initialTaskId?: string;
+  /** 是否展示手机扫码远程连接卡片。纯净版中默认关闭，仅保留 Bot 功能卡片 */
+  showScanCard?: boolean;
 }) {
   const platform = usePlatform();
   const { intl } = useZCodeIntl();
@@ -122,7 +126,8 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
   const statusDotClassName = getStatusDotClassName(status);
 
   useEffect(() => {
-    if (!open) {
+    // 扫码卡片隐藏时，不发起对上游智谱 Relay 的启动请求
+    if (!open || !showScanCard) {
       return;
     }
 
@@ -204,10 +209,20 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
     return () => {
       cancelled = true;
     };
-  }, [intl, open, platform, remoteSessionId, workspaceIdentity, workspacePath, initialTaskId]);
+  }, [
+    intl,
+    open,
+    platform,
+    remoteSessionId,
+    workspaceIdentity,
+    workspacePath,
+    initialTaskId,
+    showScanCard,
+  ]);
 
   useEffect(() => {
-    if (!open) {
+    // 扫码卡片隐藏时，不发起对上游智谱 Relay 的状态轮询
+    if (!open || !showScanCard) {
       return;
     }
 
@@ -253,10 +268,10 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [open, platform, remoteSessionId, workspaceIdentity, workspacePath]);
+  }, [open, platform, remoteSessionId, workspaceIdentity, workspacePath, showScanCard]);
 
   useEffect(() => {
-    if (!status.qrUrl) {
+    if (!open || !showScanCard || !status.qrUrl) {
       setQrDataUrl(null);
       return;
     }
@@ -281,7 +296,7 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
     return () => {
       cancelled = true;
     };
-  }, [status.qrUrl]);
+  }, [open, showScanCard, status.qrUrl]);
 
   const handleCopyLink = async () => {
     if (!status.connectUrl) {
@@ -378,7 +393,10 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
           // Bugfix: Mobile Remote Control 弹窗之前比 Remote Connect 更宽也更贴近窗口边缘，
           // 启动二维码和 Bot Channel 内容时会显得层级不一致。这里复用 Remote Connect 的外层尺寸，
           // 但不强制撑满高度；远控内容比 Remote Connect 少，内容自适应能避免窗口显得空。
-          className="max-h-[calc(100vh-6rem)] max-w-4xl gap-0 overflow-hidden rounded-2xl p-0"
+          className={cn(
+            "max-h-[calc(100vh-6rem)] gap-0 overflow-hidden rounded-2xl p-0",
+            showScanCard ? "max-w-4xl" : "max-w-xl",
+          )}
         >
           <Button
             type="button"
@@ -401,12 +419,20 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
             <DialogHeader className="space-y-2 pr-8">
               <div className="flex items-center gap-2">
                 <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-surface text-primary">
-                  <MonitorSmartphone className="size-5" />
+                  {showScanCard ? (
+                    <MonitorSmartphone className="size-5" />
+                  ) : (
+                    <BotIcon className="size-5" />
+                  )}
                 </div>
                 <div className="space-y-1">
                   <DialogTitle>{intl.formatMessage({ id: "webRemoteControl.title" })}</DialogTitle>
                   <DialogDescription>
-                    {intl.formatMessage({ id: "webRemoteControl.description" })}
+                    {intl.formatMessage({
+                      id: showScanCard
+                        ? "webRemoteControl.description"
+                        : "webRemoteControl.botChannel.description",
+                    })}
                   </DialogDescription>
                 </div>
               </div>
@@ -414,62 +440,50 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
 
             <div
               data-testid="web-remote-control-main-grid"
-              className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1.45fr)_minmax(300px,1fr)]"
+              className={cn(
+                "mt-5",
+                showScanCard
+                  ? "grid gap-4 md:grid-cols-[minmax(0,1.45fr)_minmax(300px,1fr)]"
+                  : "flex flex-col gap-4",
+              )}
             >
-              <section
-                data-testid="web-remote-control-scan-card"
-                className="flex min-h-[360px] flex-col rounded-xl border border-border bg-card p-4"
-              >
-                {status.status === "auth-required" ? (
-                  <div
-                    data-testid="web-remote-control-auth-required"
-                    className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6 text-center"
-                  >
-                    <MonitorSmartphone className="size-8 text-foreground-subtle" />
-                    <div className="space-y-2">
-                      <h3 className="text-ui-base font-medium text-foreground">
-                        {intl.formatMessage({ id: "webRemoteControl.authRequired.title" })}
-                      </h3>
-                      <p className="text-ui-base/relaxed text-foreground-subtle">
-                        {intl.formatMessage({ id: "webRemoteControl.authRequired.description" })}
-                      </p>
-                    </div>
-                    <WebRemoteControlLoginButton onOpenChange={onOpenChange} />
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-4 flex items-start gap-2">
-                      <Smartphone className="mt-0.5 size-4 shrink-0 text-foreground-subtle" />
-                      <div className="min-w-0 space-y-1">
-                        <div className="text-ui-base font-medium text-foreground">
-                          {intl.formatMessage({
-                            id: "webRemoteControl.mobileQr.title",
-                          })}
-                        </div>
+              {showScanCard ? (
+                <section
+                  data-testid="web-remote-control-scan-card"
+                  className="flex min-h-[360px] flex-col rounded-xl border border-border bg-card p-4"
+                >
+                  {status.status === "auth-required" ? (
+                    <div
+                      data-testid="web-remote-control-auth-required"
+                      className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6 text-center"
+                    >
+                      <MonitorSmartphone className="size-8 text-foreground-subtle" />
+                      <div className="space-y-2">
+                        <h3 className="text-ui-base font-medium text-foreground">
+                          {intl.formatMessage({ id: "webRemoteControl.authRequired.title" })}
+                        </h3>
                         <p className="text-ui-base/relaxed text-foreground-subtle">
-                          {intl.formatMessage({
-                            id: "webRemoteControl.mobileQr.description",
-                          })}
+                          {intl.formatMessage({ id: "webRemoteControl.authRequired.description" })}
                         </p>
                       </div>
+                      <WebRemoteControlLoginButton onOpenChange={onOpenChange} />
                     </div>
-                    <div
-                      data-testid="web-remote-control-connection-card"
-                      className="mb-3 rounded-lg bg-surface px-3 py-2"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <div className="text-ui-base font-medium text-foreground">
-                              {statusLabel}
-                            </div>
-                            <div className="flex min-w-0 items-center gap-1.5 rounded-full bg-card px-2 py-0.5 text-ui-xs font-medium text-foreground-subtle">
-                              <span
-                                className={`size-1.5 shrink-0 rounded-full ${statusDotClassName}`}
-                              />
-                              <span className="truncate">{statusTagLabel}</span>
-                            </div>
+                  ) : (
+                    <>
+                      <div className="mb-4 flex items-start gap-2">
+                        <Smartphone className="mt-0.5 size-4 shrink-0 text-foreground-subtle" />
+                        <div className="min-w-0 space-y-1">
+                          <div className="text-ui-base font-medium text-foreground">
+                            {intl.formatMessage({
+                              id: "webRemoteControl.mobileQr.title",
+                            })}
                           </div>
+                          <p className="text-ui-base/relaxed text-foreground-subtle">
+                            {intl.formatMessage({
+                              id: "webRemoteControl.mobileQr.description",
+                            })}
+                          </p>
+                        </div>
                           <div className="text-ui-base/relaxed text-foreground-subtle">
                             {statusDetail}
                           </div>
@@ -514,7 +528,9 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
                           ) : null}
                         </div>
                       ) : status.error ? (
-                        <p className="mt-3 text-ui-base/relaxed text-destructive">{status.error}</p>
+                        <p className="mt-3 text-ui-base/relaxed text-destructive">
+                          {status.error}
+                        </p>
                       ) : null}
                       <div
                         data-testid="web-remote-control-copy-link-row"
@@ -525,42 +541,48 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
                             id: "webRemoteControl.copyLink.description",
                           })}
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="default"
-                          className="shrink-0 gap-2 enabled:cursor-pointer"
-                          onClick={() => void handleCopyLink()}
-                          disabled={!status.connectUrl || loading}
-                        >
-                          <CopyIcon className="size-3.5" />
-                          {intl.formatMessage({ id: "webRemoteControl.copyLink" })}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-border bg-background-alt p-4">
-                      {qrDataUrl ? (
-                        <img
-                          src={qrDataUrl}
-                          alt={intl.formatMessage({ id: "webRemoteControl.qrAlt" })}
-                          className="size-64 max-w-full rounded-lg bg-white p-3"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-3 text-center text-ui-base text-foreground-subtle">
-                          <LoaderCircle className="size-5 animate-spin" />
-                          <span>
-                            {intl.formatMessage({
-                              id: "webRemoteControl.generating",
-                            })}
-                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="default"
+                            className="shrink-0 gap-2 enabled:cursor-pointer"
+                            onClick={() => void handleCopyLink()}
+                            disabled={!status.connectUrl || loading}
+                          >
+                            <CopyIcon className="size-3.5" />
+                            {intl.formatMessage({ id: "webRemoteControl.copyLink" })}
+                          </Button>
                         </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </section>
+                      </div>
+                      <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-border bg-background-alt p-4">
+                        {qrDataUrl ? (
+                          <img
+                            src={qrDataUrl}
+                            alt={intl.formatMessage({ id: "webRemoteControl.qrAlt" })}
+                            className="size-64 max-w-full rounded-lg bg-white p-3"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-3 text-center text-ui-base text-foreground-subtle">
+                            <LoaderCircle className="size-5 animate-spin" />
+                            <span>
+                              {intl.formatMessage({
+                                id: "webRemoteControl.generating",
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </section>
+              ) : null}
 
-              <section className="flex min-h-[360px] flex-col rounded-xl border border-border bg-card p-4">
+              <section
+                className={cn(
+                  "flex flex-col rounded-xl border border-border bg-card p-4",
+                  showScanCard && "min-h-[360px]",
+                )}
+              >
                 <div className="mb-4 flex items-start gap-2">
                   <BotIcon className="mt-0.5 size-4 shrink-0 text-foreground-subtle" />
                   <div className="min-w-0 space-y-1">
