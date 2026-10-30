@@ -29,3 +29,9 @@ apps/zcode-cli/packages/visualize-plugin/skills/visualize/assets/vendor/** -text
 apps/zcode-cli/packages/design-plugin/skills/design/design-resources/** -text -whitespace linguist-vendored=true
 apps/zcode-cli/packages/design-plugin/hooks/design-rules text eol=lf
 apps/zcode-cli/packages/design-plugin/hooks/run-hook.cmd text eol=lf
+# CUA 真实运行时打包资产与原生 Addon：编译生成产物，按字节保真，避免 diff 展开与三方合并文本冲突
+packages/zcode-cua/vendor/** -text -whitespace linguist-generated=true
+packages/zcode-cua/dist/** -text -whitespace linguist-generated=true
+packages/zcode-cua/build/** -text -whitespace linguist-generated=true
+*.node binary
+
