@@ -484,10 +484,28 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
                             })}
                           </p>
                         </div>
-                          <div className="text-ui-base/relaxed text-foreground-subtle">
-                            {statusDetail}
+                      </div>
+                      <div
+                        data-testid="web-remote-control-connection-card"
+                        className="mb-3 rounded-lg bg-surface px-3 py-2"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="text-ui-base font-medium text-foreground">
+                                {statusLabel}
+                              </div>
+                              <div className="flex min-w-0 items-center gap-1.5 rounded-full bg-card px-2 py-0.5 text-ui-xs font-medium text-foreground-subtle">
+                                <span
+                                  className={`size-1.5 shrink-0 rounded-full ${statusDotClassName}`}
+                                />
+                                <span className="truncate">{statusTagLabel}</span>
+                              </div>
+                            </div>
+                            <div className="text-ui-base/relaxed text-foreground-subtle">
+                              {statusDetail}
+                            </div>
                           </div>
-                        </div>
                         {status.mobileConnected ? (
                           <Button
                             type="button"
