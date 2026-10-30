@@ -59,7 +59,6 @@
     "build": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-  "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "sharp": "^0.34.0"
   },
