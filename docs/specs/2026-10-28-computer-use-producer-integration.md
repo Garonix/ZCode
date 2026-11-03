@@ -41,6 +41,7 @@
 2. **macOS**：
    - 资源路径：`packages/desktop/bundled-cua-helper/${targetArch}/ZCode Computer Use.app`
    - 提取策略：CI 与本地构建脚本 `scripts/prepare-macos-cua-helper.mjs` 按当前版本号从官方 CDN 解包提取至 `bundled-cua-helper`。
+   - 构建号对齐（Helper Build ID Alignment）：Helper 的 `Info.plist` 内声明了 `ZCodeCUAHelperBuildId`（官方预编译产物为 `pipeline-323224-025f7f39`）。`packages/zcode-cua/vendor/dist-index.js` 中的 `ZCODE_CUA_HELPER_BUILD_ID` 与 CI `release.yml` 的环境变量必须保持对齐，避免 `verifyCuaHelperBundle()` 因 build id mismatch 阻断 Helper 安装与权限代理拉起。
 3. **Linux**：
    - 保持兼容：运行时加载标准 Producer 逻辑，不打包原生 Windows/macOS Helper，fail-open 或回退至通用截屏。
 

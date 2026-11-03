@@ -7000,7 +7000,11 @@ var ZCODE_CUA_HELPER_BUILD_ID;
 var init_cua_version = __esm({
   "src/broker/shared/cua-version.ts"() {
     "use strict";
-    ZCODE_CUA_HELPER_BUILD_ID = true ? "pipeline-293504-ab4d5e6b" : "";
+    // 修复原因：打包产物硬编码为 pipeline-293504-ab4d5e6b，导致 macOS 安装验证与随包打包的 Helper（pipeline-323224-025f7f39）不匹配阻断 CUA 启动。
+    // 修复依据：优先从环境变量 ZCODE_CUA_HELPER_BUILD_ID 获取，若未提供则兜底为真实构建号 pipeline-323224-025f7f39。
+    ZCODE_CUA_HELPER_BUILD_ID =
+      (typeof process !== "undefined" && process.env.ZCODE_CUA_HELPER_BUILD_ID?.trim()) ||
+      "pipeline-323224-025f7f39";
   }
 });
 var init_shared = __esm({
