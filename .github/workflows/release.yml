@@ -35,6 +35,8 @@ env:
   ZCODE_ARMS_RUM_ENDPOINT: ""
   ZCODE_TELEMETRY_REPORT_ENDPOINT: ""
   ZCODE_AUTO_UPDATE_ENABLED: "false"
+  # 对齐随包打入的 macOS 原生 Helper 构建号，确保强校验正常通过
+  ZCODE_CUA_HELPER_BUILD_ID: "pipeline-323224-025f7f39"
 
 jobs:
   # -------------------------------------------------------------
