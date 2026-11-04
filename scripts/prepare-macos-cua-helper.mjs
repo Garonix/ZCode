@@ -292,6 +292,14 @@ export async function prepareMacosCuaHelper({ arch = process.env.TARGET_ARCH || 
     }
     writeFileSync(helperBin, replaceOnce(binary, UNSIGNED_LAUNCHER_PATCH.from, UNSIGNED_LAUNCHER_PATCH.to));
 
+    // ditto 会保留下载产物上的扩展属性；带残留 xattr 的 bundle 会让 codesign 报
+    // "resource fork, Finder information, or similar detritus not allowed"，先清干净再签。
+    try {
+      run("/usr/bin/xattr", ["-cr", helperAppPath]);
+    } catch {
+      // 没有 xattr 可清时命令可能返回非零，不影响后续签名。
+    }
+
     log(`重签 Helper（identity=${signingIdentity}）`);
     const signArgs = ["--force", "--sign", signingIdentity, "--identifier", "dev.zcode.cua-helper"];
     if (entitlementsPath) signArgs.push("--entitlements", entitlementsPath);

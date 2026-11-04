@@ -23,9 +23,11 @@ if [ -z "$P12_PASSWORD" ]; then
 fi
 
 # CI 会把 p12 以 base64 放进环境变量，这里统一落成临时文件，避免命令行泄露私钥内容。
+# 用 openssl 解码而不是 base64：macOS 自带的是 BSD base64，不认 GNU 的 --decode。
 if [ -n "${ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64:-}" ]; then
   P12_PATH="$(mktemp -t zcode-cua-helper-p12).p12"
-  printf '%s' "$ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64" | base64 --decode > "$P12_PATH"
+  printf '%s' "$ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64" \
+    | openssl base64 -d -A -out "$P12_PATH"
 fi
 
 echo "[import-cua-helper-signing-identity] 创建 keychain：$KEYCHAIN_PATH"
