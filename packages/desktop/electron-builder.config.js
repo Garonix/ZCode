@@ -747,7 +747,9 @@ export default {
     { from: resolve(workspaceRoot, noticesFileName), to: noticesFileName },
     ...(targetPlatform.os === "darwin"
       ? [
-          ...(shouldPackageComputerUseHelper
+          // 只有真正准备并重签过的 Helper 才随包：没有签名身份时（例如 fork 未配置 CI Secret）
+          // 宁可不带 Helper（CUA 明确不可用），也不要把签名无效、启动即被 SIGKILL 的产物打进去。
+          ...(shouldPackageComputerUseHelper && existsSync(bundledCuaHelperSource)
             ? [
                 {
                   from: bundledCuaHelperSource,

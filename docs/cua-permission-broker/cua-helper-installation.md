@@ -52,6 +52,12 @@ arm64 Helper 与主 App 一起交付。
 - `codesign --verify --deep --strict` 必须通过。
 - `codesign -dv --verbose=4` 必须能读到非 ad-hoc `TeamIdentifier`，且必须等于期望 team（默认 `8A5X4JJ39T`，可用 `ZCODE_CUA_HELPER_TEAM_ID` 覆盖）。release 校验下 `expectedTeamIdentifier` 为空会被直接拒绝（fail-closed），不接受未锚定 team 的包。
 - `spctl -a -vv -t exec` 必须通过，用于验证 Gatekeeper/notarization 结果。
+- **自签名信任模式（本仓库开源构建）**：`packages/desktop/bundled-cua-helper/signing.json` 存在且
+  构建期折叠了 `__ZCODE_CUA_HELPER_CERT_SHA256__` 时，安装器改走 `pinned_self_signed` 校验：
+  `codesign --verify --deep --strict` 必须通过、叶子证书 SHA-256 必须等于构建期固定值，
+  bundle id / build id / arch 仍需匹配；不再要求 Apple TeamIdentifier，也不做公证/签名评估。
+  该模式用于「官方 Helper 打补丁后用固定自签名证书重签」的发布包，私钥只存在于构建侧。
+  没有签名身份时 macOS 包不携带 Helper（CUA 明确不可用），不会回退成签名无效的产物。
 
 校验失败时不能启动 Helper，也不能把 socket/token 注入给 shared `node_repl` host。
 

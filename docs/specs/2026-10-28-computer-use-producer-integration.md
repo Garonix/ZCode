@@ -40,8 +40,10 @@
    - 打包映射：`packages/desktop/scripts/prepare-windows-cua-helper.mjs` 准备至 `bundled-tools/win32-x64/cua-helper`，由 `electron-builder` 打入 `tools/cua-helper`。
 2. **macOS**：
    - 资源路径：`packages/desktop/bundled-cua-helper/${targetArch}/ZCode Computer Use.app`
-   - 提取策略：CI 与本地构建脚本 `scripts/prepare-macos-cua-helper.mjs` 按当前版本号从官方 CDN 解包提取至 `bundled-cua-helper`。
-   - 构建号对齐（Helper Build ID Alignment）：Helper 的 `Info.plist` 内声明了 `ZCodeCUAHelperBuildId`（官方预编译产物为 `pipeline-323224-025f7f39`）。`packages/zcode-cua/vendor/dist-index.js` 中的 `ZCODE_CUA_HELPER_BUILD_ID` 与 CI `release.yml` 的环境变量必须保持对齐，避免 `verifyCuaHelperBundle()` 因 build id mismatch 阻断 Helper 安装与权限代理拉起。
+   - 提取策略：CI 与本地构建脚本 `scripts/prepare-macos-cua-helper.mjs` 按当前版本号从官方 CDN 解包提取（`ditto`）至 `bundled-cua-helper`；不再提供低版本兜底，取不到目标版本即失败。
+   - **签名与信任模型（2026-11-04 起）**：官方 Helper 的 launcher 校验要求 Z.ai 的 Apple Team，本仓库没有 Apple Developer ID，只能打开 Helper 内编译期的 `allowUnsignedLauncherLocalDev` 逃逸；而对已公证的 Mach-O 做任何原地改写都会让 `codesign` 失效、被内核 SIGKILL。因此固定流程是：解包 → 打补丁 → **用固定的自签名证书重签** → `codesign --verify --deep --strict` 自检 → 写出 `bundled-cua-helper/signing.json`（`buildId` + 证书 SHA-256）。
+   - 构建期把 `signing.json` 折叠为 `__ZCODE_CUA_HELPER_BUILD_ID__` / `__ZCODE_CUA_HELPER_CERT_SHA256__`；运行时 `verifyCuaHelperBundle()` 走「指纹固定」模式（`pinned_self_signed`）：要求签名自洽且叶子证书指纹与构建期一致，不再要求 Apple TeamIdentifier，也不做公证（spctl）评估。禁止在源码里硬编码 build id 或证书指纹。
+   - 流水线门禁：`scripts/verify-macos-cua-helper-signing.mjs` 在打包后复核随包 Helper 的签名、证书指纹与 build id；没有签名身份时 macOS 包不携带 Helper（CUA 明确不可用），不得把签名无效的产物打进安装包。
 3. **Linux**：
    - 保持兼容：运行时加载标准 Producer 逻辑，不打包原生 Windows/macOS Helper，fail-open 或回退至通用截屏。
 

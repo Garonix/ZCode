@@ -72,6 +72,35 @@ Screen Recording 授权条目。相关约束：
   `ZCODE_CUA_HELPER_NODE_PATH` 指向一份为目标架构编译的 SEA-capable Node，并为目标架构编译
   pinned producer 的 `build/Release/ax_native.node`（目标 `--arch=x64`）。原生 arm64 job 无需额外设置。
 
+## 自签名 Helper 发布链路（本仓库实际构建）
+
+本仓库没有 Apple Developer ID，无法复刻上游「Developer ID + notarization」链路。macOS 上的实际做法是：
+
+1. **下载 → 解包 → 打补丁**：`scripts/prepare-macos-cua-helper.mjs` 从官方安装包用 `ditto` 取出 Helper，
+   把编译期常量 `allowUnsignedLauncherLocalDev` 打开（Helper 的运行时判定要求它与 argv 逃逸同时成立，
+   否则拒绝本仓库未签名的 ZCode.app）。
+2. **固定自签名证书重签**：打补丁会破坏官方公证签名，必须在同一步用
+   `ZCODE_CUA_HELPER_SIGNING_IDENTITY` 重签并 `codesign --verify --deep --strict` 自检。
+   证书由 `scripts/create-cua-helper-signing-identity.sh` 一次性生成，私钥只放构建侧（GitHub Secrets）。
+3. **证书固定**：脚本把 Helper 的 `ZCodeCUAHelperBuildId` 与证书 SHA-256 写入
+   `packages/desktop/bundled-cua-helper/signing.json`；构建期折叠进 JS bundle，宿主据此做
+   `pinned_self_signed` 校验（签名自洽 + 证书指纹一致 + bundle id / build id / arch 匹配），
+   不再要求 Apple TeamIdentifier，也不做公证评估。
+4. **发布门禁**：`scripts/verify-macos-cua-helper-signing.mjs` 在打包后复核随包 Helper。
+   Helper 签名无效时直接失败——上一版正是漏了这道门，把「打过补丁未重签」的 Helper 打进 DMG，
+   用户侧启动即被 SIGKILL。
+
+CI 需要的 Secrets：
+
+- `ZCODE_CUA_HELPER_SIGNING_CERT_P12`：p12 的 base64（`create-cua-helper-signing-identity.sh` 生成）
+- `ZCODE_CUA_HELPER_SIGNING_CERT_PASSWORD`：p12 密码
+- `ZCODE_CUA_HELPER_SIGNING_IDENTITY`：证书 CN
+
+未配置上述 Secrets 时，macOS 包**不携带** Helper（CUA 明确不可用），不会回退成不可启动的产物。
+
+> 自签名构建不适用下文 `doctor-macos-release` 的 `spctl`/notarization staple 验收（它们只对 Apple 签名的正式包成立），
+> 改用 `node scripts/verify-macos-cua-helper-signing.mjs --dist packages/desktop/dist` 复核 Helper。
+
 ## 本地无 Developer ID 的 Helper 调试
 
 开发机没有 Developer ID / notarization credentials 时，仍然可以用真实 ZCode App 跑
