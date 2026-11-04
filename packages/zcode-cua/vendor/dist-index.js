@@ -7499,15 +7499,14 @@ async function defaultAssessGatekeeper(appPath) {
 // 读取生效签名里叶子证书的 DER SHA-256。自签名信任模型用它做证书 pinning：
 // 与 Apple TeamIdentifier 不同，自签名证书没有 team 字段，只能按证书本身固定。
 async function defaultReadSigningCertificateSha256(appPath) {
-  const directory = await mkdtemp(join(tmpdir2(), "zcode-cua-signing-cert-"));
+  const directory = await mkdtemp(join(tmpdir2(), "zcua-signing-cert-"));
   const prefix = join(directory, "cert");
   try {
     let stderrText = "";
     try {
       await execFileText(MACOS_SYSTEM_COMMANDS.codesign, [
         "-d",
-        "--extract-certificates",
-        prefix,
+        `--extract-certificates=${prefix}`,
         appPath
       ]);
     } catch (error) {

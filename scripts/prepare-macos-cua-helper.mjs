@@ -138,7 +138,7 @@ export function readSigningCertificateSha256(appPath) {
   try {
     const prefix = join(directory, "cert");
     try {
-      runQuiet("/usr/bin/codesign", ["-d", "--extract-certificates", prefix, appPath]);
+      runQuiet("/usr/bin/codesign", ["-d", `--extract-certificates=${prefix}`, appPath]);
     } catch (error) {
       // codesign -d 在部分版本上以非零退出码输出诊断信息，只有产物缺失才算失败。
       if (!existsSync(`${prefix}0`)) throw error;
