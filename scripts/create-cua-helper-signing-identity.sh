@@ -36,10 +36,15 @@ openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
   -addext "keyUsage=critical,digitalSignature" \
   -addext "extendedKeyUsage=critical,codeSigning" >/dev/null 2>&1
 
+# macOS 的 SecKeychainItemImport 不认 OpenSSL 3 默认的 PBES2/AES-256 p12，
+# 会以 "MAC verification failed during PKCS12 import" 报错。显式退回 SHA1 + 3DES 的老算法。
 openssl pkcs12 -export \
   -inkey cua-helper-signing.key \
   -in cua-helper-signing.crt \
   -name "$CN" \
+  -keypbe PBE-SHA1-3DES \
+  -certpbe PBE-SHA1-3DES \
+  -macalg sha1 \
   -passout "pass:$P12_PASSWORD" \
   -out cua-helper-signing.p12
 
