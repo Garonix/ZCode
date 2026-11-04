@@ -302,6 +302,9 @@ export async function prepareMacosCuaHelper({ arch = process.env.TARGET_ARCH || 
 
     log(`重签 Helper（identity=${signingIdentity}）`);
     const signArgs = ["--force", "--sign", signingIdentity, "--identifier", "dev.zcode.cua-helper"];
+    // CI 把身份放在临时 keychain 里；显式指定，避免 codesign 只在默认搜索列表里找不到自签名身份。
+    const signingKeychainPath = process.env.ZCODE_CUA_HELPER_KEYCHAIN_PATH?.trim();
+    if (signingKeychainPath) signArgs.push("--keychain", signingKeychainPath);
     if (entitlementsPath) signArgs.push("--entitlements", entitlementsPath);
     signArgs.push(helperAppPath);
     run("/usr/bin/codesign", signArgs);
