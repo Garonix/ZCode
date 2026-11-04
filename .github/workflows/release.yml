@@ -35,8 +35,6 @@ env:
   ZCODE_ARMS_RUM_ENDPOINT: ""
   ZCODE_TELEMETRY_REPORT_ENDPOINT: ""
   ZCODE_AUTO_UPDATE_ENABLED: "false"
-  # 对齐随包打入的 macOS 原生 Helper 构建号，确保强校验正常通过
-  ZCODE_CUA_HELPER_BUILD_ID: "pipeline-323224-025f7f39"
 
 jobs:
   # -------------------------------------------------------------
@@ -131,12 +129,38 @@ jobs:
           name: remote-mock-cdn
           path: packages/desktop/mock-cdn
 
-      - name: Prepare macOS CUA Helper
+      - name: Detect CUA Helper signing identity
         if: runner.os == 'macOS'
+        env:
+          CUA_HELPER_SIGNING_CERT: ${{ secrets.ZCODE_CUA_HELPER_SIGNING_CERT_P12 }}
+        run: |
+          if [ -n "$CUA_HELPER_SIGNING_CERT" ]; then
+            echo "ZCODE_CUA_SIGNING_AVAILABLE=true" >> "$GITHUB_ENV"
+          else
+            echo "ZCODE_CUA_SIGNING_AVAILABLE=false" >> "$GITHUB_ENV"
+            echo "::warning::未配置 ZCODE_CUA_HELPER_SIGNING_CERT_P12，本次 macOS 包不携带 Computer Use Helper（CUA 不可用）。生成身份见 scripts/create-cua-helper-signing-identity.sh"
+          fi
+
+      - name: Import CUA Helper signing identity
+        if: runner.os == 'macOS' && env.ZCODE_CUA_SIGNING_AVAILABLE == 'true'
+        env:
+          ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64: ${{ secrets.ZCODE_CUA_HELPER_SIGNING_CERT_P12 }}
+          ZCODE_CUA_HELPER_SIGNING_CERT_PASSWORD: ${{ secrets.ZCODE_CUA_HELPER_SIGNING_CERT_PASSWORD }}
+          ZCODE_CUA_HELPER_SIGNING_IDENTITY: ${{ secrets.ZCODE_CUA_HELPER_SIGNING_IDENTITY }}
+        run: bash scripts/import-cua-helper-signing-identity.sh
+
+      - name: Prepare macOS CUA Helper
+        if: runner.os == 'macOS' && env.ZCODE_CUA_SIGNING_AVAILABLE == 'true'
         run: node scripts/prepare-macos-cua-helper.mjs ${{ matrix.target_arch }}
 
       - name: Build Desktop package
         run: pnpm --filter @zcode/desktop bundle -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
+
+      # 门禁：Helper 必须签名有效且证书/build id 与构建期固定值一致。
+      # 上一版把「打过补丁未重签」的 Helper 打进 DMG，用户侧启动即被 SIGKILL，流水线却全绿。
+      - name: Verify bundled CUA Helper signature
+        if: runner.os == 'macOS' && env.ZCODE_CUA_SIGNING_AVAILABLE == 'true'
+        run: node scripts/verify-macos-cua-helper-signing.mjs --dist packages/desktop/dist
 
       - name: Collect artifacts
         shell: bash

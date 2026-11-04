@@ -41,7 +41,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? Object.create
 // missing dependency never breaks module evaluation.
 var require_express2 = () => { try { return __requireReal("express"); } catch { return {}; } };
 // ../../../../node_modules/@zcode/zcode-cua/dist/index.js
-import { homedir as homedir2 } from "node:os";
+import { homedir as homedir2, tmpdir as tmpdir2 } from "node:os";
 import { join as join2 } from "node:path";
 import process4 from "node:process";
 import { execFile } from "node:child_process";
@@ -6997,14 +6997,24 @@ var init_cua_constants = __esm({
   }
 });
 var ZCODE_CUA_HELPER_BUILD_ID;
+var ZCODE_CUA_HELPER_SIGNING_CERT_SHA256;
 var init_cua_version = __esm({
   "src/broker/shared/cua-version.ts"() {
     "use strict";
-    // 修复原因：打包产物硬编码为 pipeline-293504-ab4d5e6b，导致 macOS 安装验证与随包打包的 Helper（pipeline-323224-025f7f39）不匹配阻断 CUA 启动。
-    // 修复依据：优先从环境变量 ZCODE_CUA_HELPER_BUILD_ID 获取，若未提供则兜底为真实构建号 pipeline-323224-025f7f39。
+    // 修复原因：此前的打包产物把 build id 折叠成占位值，与随包 Helper 的 Info.plist 不一致，
+    // verifyCuaHelperBundle 直接 fail-closed，macOS 上 Helper 永不启动（broker_not_accepting 重试全败）。
+    // 修复依据：build id 的唯一来源是构建期从下载产物 Info.plist 读取并注入的 define；
+    // 非打包环境（dev）仍允许用 ZCODE_CUA_HELPER_BUILD_ID 覆盖，正式包不再有任何硬编码兜底。
     ZCODE_CUA_HELPER_BUILD_ID =
+      (typeof __ZCODE_CUA_HELPER_BUILD_ID__ === "string" ? __ZCODE_CUA_HELPER_BUILD_ID__.trim() : "") ||
       (typeof process !== "undefined" && process.env.ZCODE_CUA_HELPER_BUILD_ID?.trim()) ||
-      "pipeline-323224-025f7f39";
+      "";
+    // 自签名信任模型（本仓库无 Apple Developer ID）：构建期把 Helper 签名证书的 SHA-256 折叠进来，
+    // 运行时要求已安装 Helper 的叶子证书指纹与之一致。空串表示走官方 TeamIdentifier 强校验。
+    ZCODE_CUA_HELPER_SIGNING_CERT_SHA256 =
+      typeof __ZCODE_CUA_HELPER_CERT_SHA256__ === "string"
+        ? __ZCODE_CUA_HELPER_CERT_SHA256__.trim().toLowerCase()
+        : "";
   }
 });
 var init_shared = __esm({
@@ -7372,6 +7382,30 @@ async function verifyCuaHelperBundle(appPath, plan, dependencies, options = {}) 
       mode: "local_dev_unsigned"
     };
   }
+  // 自签名信任模型：本仓库没有 Apple Developer ID，随包 Helper 是「官方产物 → 打补丁 → 用固定
+  // 自签名证书重签」得到的。这里要求生效中的签名必须自洽（codesign --verify 通过，任何对
+  // Mach-O 的事后改写都会失败），并且叶子证书指纹与构建期折叠进来的值一致 —— 指纹固定等价于
+  // 证书 pinning，同 UID 进程没有签名私钥就无法伪造一个能通过校验的 Helper。
+  if (plan.expectedCertificateSha256) {
+    await dependencies.verifyCodeSignature(appPath);
+    const certificateSha256 = await dependencies.readSigningCertificateSha256(appPath);
+    if (certificateSha256 !== plan.expectedCertificateSha256) {
+      throw new CuaHelperError(
+        "verification_failed",
+        `${HELPER_APP_NAME} signing certificate sha256 ${certificateSha256 ?? "<missing>"} does not match ${plan.expectedCertificateSha256}`
+      );
+    }
+    const codesign = await inspectCodesignDetailsBestEffort(
+      appPath,
+      dependencies
+    );
+    return {
+      bundleInfo,
+      codesign,
+      releaseEligible: false,
+      mode: "pinned_self_signed"
+    };
+  }
   await dependencies.verifyCodeSignature(appPath);
   const codesign = await dependencies.inspectCodesignDetails(appPath);
   if (codesign.adHoc || !codesign.teamIdentifier) {
@@ -7462,6 +7496,38 @@ async function defaultAssessGatekeeper(appPath) {
     appPath
   ]);
 }
+// 读取生效签名里叶子证书的 DER SHA-256。自签名信任模型用它做证书 pinning：
+// 与 Apple TeamIdentifier 不同，自签名证书没有 team 字段，只能按证书本身固定。
+async function defaultReadSigningCertificateSha256(appPath) {
+  const directory = await mkdtemp(join(tmpdir2(), "zcode-cua-signing-cert-"));
+  const prefix = join(directory, "cert");
+  try {
+    let stderrText = "";
+    try {
+      await execFileText(MACOS_SYSTEM_COMMANDS.codesign, [
+        "-d",
+        "--extract-certificates",
+        prefix,
+        appPath
+      ]);
+    } catch (error) {
+      // codesign -d 在部分版本上即使成功也返回非零，只有产物缺失时才视为失败。
+      stderrText = formatErrorMessage(error);
+    }
+    const leafPath = `${prefix}0`;
+    if (!existsSync2(leafPath)) {
+      throw new CuaHelperError(
+        "verification_failed",
+        `${HELPER_APP_NAME} has no extractable signing certificate${stderrText ? `: ${stderrText}` : ""}`
+      );
+    }
+    const der = await readFile(leafPath);
+    return createHash("sha256").update(der).digest("hex");
+  } finally {
+    await rm(directory, { recursive: true, force: true }).catch(() => {
+    });
+  }
+}
 function isExpectedHelperVersion(bundleInfo, expectedVersion) {
   if (expectedVersion === void 0) return true;
   return bundleInfo.version === expectedVersion && bundleInfo.buildVersion === expectedVersion;
@@ -7503,6 +7569,7 @@ var init_helperVerifier = __esm({
       readExecutableArchs: readMachoArchNames,
       verifyCodeSignature: defaultVerifyCodeSignature,
       inspectCodesignDetails: defaultInspectCodesignDetails,
+      readSigningCertificateSha256: defaultReadSigningCertificateSha256,
       assessGatekeeper: defaultAssessGatekeeper
     };
   }
@@ -7709,8 +7776,33 @@ function resolveCuaHelperInstallPlan(options = {}) {
     expectedBundleId: resolveExpectedCuaHelperBundleId(env),
     expectedTeamIdentifier: localDevelopmentRuntime ? env.ZCODE_CUA_HELPER_TEAM_ID?.trim() || HELPER_TEAM_ID : HELPER_TEAM_ID,
     expectedBuildId,
+    // 自签名信任模型的锚点。非空时 verifyCuaHelperBundle 改走「证书指纹固定」校验，
+    // 不再要求 Apple TeamIdentifier / 公证评估（本仓库没有 Apple Developer ID）。
+    expectedCertificateSha256: resolveExpectedCuaHelperCertificateSha256(
+      env,
+      options.embeddedCertificateSha256 ?? ZCODE_CUA_HELPER_SIGNING_CERT_SHA256
+    ),
     allowUnsignedLocalDev: isUnsignedHelperLocalDevRequested(env)
   };
+}
+function resolveExpectedCuaHelperCertificateSha256(env = process.env, embeddedCertificateSha256 = ZCODE_CUA_HELPER_SIGNING_CERT_SHA256) {
+  const runtimeOverride = isCuaLocalDevelopmentRuntime(env) ? env.ZCODE_CUA_HELPER_CERT_SHA256?.trim() : void 0;
+  const raw = (embeddedCertificateSha256 ?? "").trim() || runtimeOverride || "";
+  if (!raw) return null;
+  const normalized = raw.toLowerCase();
+  if (!/^[0-9a-f]{64}$/u.test(normalized)) {
+    throw new CuaHelperError(
+      "install_failed",
+      "ZCODE_CUA_HELPER_CERT_SHA256 must be a 64-character hex SHA-256 digest of the Helper signing certificate"
+    );
+  }
+  return normalized;
+}
+// 本次构建是否走「自签名 Helper + 证书固定」信任模型。为 true 时，Helper 二进制里
+// allowUnsignedLauncherLocalDev 已被打开，所有拉起路径都必须带上成对的 local-dev 逃逸参数，
+// 否则 Helper 的 broker 会按官方 Z.ai team 校验对端签名，把本仓库未签名的 ZCode 当作陌生进程拒绝。
+function isCuaSelfSignedHelperTrustEnabled() {
+  return Boolean(ZCODE_CUA_HELPER_SIGNING_CERT_SHA256?.trim());
 }
 function resolveCuaHelperRuntimeVersion(options = {}) {
   const env = options.env ?? process.env;
@@ -35773,6 +35865,8 @@ export {
   resolveCuaHelperInstallPlan,
   resolveExpectedCuaHelperBundleId,
   resolveExpectedCuaHelperBuildId,
+  resolveExpectedCuaHelperCertificateSha256,
+  isCuaSelfSignedHelperTrustEnabled,
   resolveCuaHelperRuntimeVersion,
   resolveCuaHelperInstallRoot,
   standaloneHelperCandidatePaths,

@@ -33,14 +33,23 @@ const require = __zcodeCreateRequire(import.meta.url);`;
 // 也不会重装。dev 不受影响（ALLOW_UNSIGNED_LOCAL + 非 production runtime 绕过该守卫），
 // 所以只在正式包暴露，本地怎么测都测不出来。
 //
-// 取值与 desktop 侧保持同一来源：CI 注入 ZCODE_CUA_HELPER_BUILD_ID env；dev 为空串走兜底
-// （dev Helper 不走下载/pin 校验）。见 packages/desktop/tsup.config.ts 同名 define 的注释。
-const resolveCuaHelperBuildId = (env = process.env) =>
-  env.ZCODE_CUA_HELPER_BUILD_ID?.trim() ?? "";
+// 取值与 desktop 侧保持同一来源：正式构建读 prepare-macos-cua-helper.mjs 写入的
+// bundled-cua-helper/signing.json（或 CI 显式注入的 env）；dev 为空串走兜底。
+// 见 scripts/cua-helper-build-identity.mjs 与 packages/desktop/tsup.config.ts 同名 define。
+const { resolveCuaHelperBuildIdentity } = await import(
+  pathToFileURL(
+    resolve(packageRoot, "../../../..", "scripts", "cua-helper-build-identity.mjs"),
+  ).href
+);
+const defaultCuaHelperBuildIdentity = resolveCuaHelperBuildIdentity({
+  repoRoot: resolve(packageRoot, "../../../.."),
+  env: process.env,
+});
 
 export const buildNodeReplHostBundle = async ({
   outfile = resolve(packageRoot, "dist", "mcp", "server.js"),
-  cuaHelperBuildId = resolveCuaHelperBuildId(),
+  cuaHelperBuildId = defaultCuaHelperBuildIdentity.buildId,
+  cuaHelperCertificateSha256 = defaultCuaHelperBuildIdentity.certificateSha256,
 } = {}) => {
   await mkdir(dirname(outfile), { recursive: true });
   await build({
@@ -48,6 +57,7 @@ export const buildNodeReplHostBundle = async ({
     bundle: true,
     define: {
       __ZCODE_CUA_HELPER_BUILD_ID__: JSON.stringify(cuaHelperBuildId),
+      __ZCODE_CUA_HELPER_CERT_SHA256__: JSON.stringify(cuaHelperCertificateSha256),
     },
     entryPoints: [resolve(packageRoot, "src", "server.ts")],
     format: "esm",
@@ -59,15 +69,22 @@ export const buildNodeReplHostBundle = async ({
   });
   // 构建期守卫：define 名一旦漂移（改名、被 createSharedDefines 之类重构吞掉），
   // 产物会静默退回空串，而症状只在正式包出现且表现为超时。这里立刻失败，别再让它溜到用户手上。
-  if (cuaHelperBuildId) {
+  if (cuaHelperBuildId || cuaHelperCertificateSha256) {
     const bundled = await readFile(outfile, "utf8");
-    if (!bundled.includes(cuaHelperBuildId)) {
+    if (cuaHelperBuildId && !bundled.includes(cuaHelperBuildId)) {
       throw new Error(
         `[node-repl-host] ZCODE_CUA_HELPER_BUILD_ID=${cuaHelperBuildId} 未折叠进 ${outfile}：` +
           "__ZCODE_CUA_HELPER_BUILD_ID__ define 没有生效，正式包的 Helper 安装会被 fail-closed 拒绝。",
       );
     }
+    if (cuaHelperCertificateSha256 && !bundled.includes(cuaHelperCertificateSha256)) {
+      throw new Error(
+        `[node-repl-host] ZCODE_CUA_HELPER_CERT_SHA256=${cuaHelperCertificateSha256} 未折叠进 ${outfile}：` +
+          "__ZCODE_CUA_HELPER_CERT_SHA256__ define 没有生效，自签名 Helper 的证书固定校验会失败。",
+      );
+    }
   }
+<<<<<<< HEAD
   // 修复原因：官方插件 seed 按版本复用缓存，而 server.js 的 build id 每条流水线都变、版本号不变。
   // 写出构建身份文件，供 bootstrap 的 buildIdentityPath 比较，桌面升级后才会重新 seed。
   // 写在 outfile 所在 dist 根目录（默认 dist/build-identity.json），测试的临时输出不会改写真实 dist。
@@ -76,6 +93,9 @@ export const buildNodeReplHostBundle = async ({
     `${JSON.stringify({ cuaHelperBuildId })}\n`,
   );
   return { outfile, cuaHelperBuildId };
+=======
+  return { outfile, cuaHelperBuildId, cuaHelperCertificateSha256 };
+>>>>>>> bbef93c2 (fix(cua): 修复 macOS Helper 签名被补丁破坏导致启动即被 SIGKILL)
 };
 
 // 这里原先写成 `file://${process.argv[1]}`。

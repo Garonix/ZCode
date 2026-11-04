@@ -598,7 +598,11 @@ import {
   buildAgentRuntimeEnv,
 } from "./runtime-tools/agentProxyEnv.js";
 import { ensureAppCaCert } from "./runtime-tools/appCaCert.js";
-import { buildHelperOpenArgs, isCuaLocalDevelopmentRuntime } from "@zcode/zcode-cua/broker/server";
+import {
+  buildHelperOpenArgs,
+  isCuaLocalDevelopmentRuntime,
+  isCuaSelfSignedHelperTrustEnabled,
+} from "@zcode/zcode-cua/broker/server";
 import { createServiceLogger, type ServiceLogger } from "#src/logger/serviceLogger.js";
 import { ensureTelemetryDeviceMid } from "#src/telemetry/telemetryCore.js";
 import { IOffPeakTaskService } from "./session/offPeakTask.js";
@@ -2012,7 +2016,10 @@ export function createLocalServices(options: {
       socketPath,
       exitLogPath: `${socketPath}.settings.exit.log`,
       ghostCursorOverlay: true,
-      ...(isCuaLocalDevelopmentRuntime(process.env)
+      // 自签名分发（本仓库无 Apple Developer ID）与 dev 一样必须带成对逃逸参数：
+      // Helper 的 broker 会按官方 Z.ai team 校验对端签名，本仓库的 ZCode.app 过不了这道门。
+      // 设置页先拉起的 Helper 常驻，后续真实 CUA 调用复用同一进程，漏传即整条链路被拒。
+      ...(isCuaLocalDevelopmentRuntime(process.env) || isCuaSelfSignedHelperTrustEnabled()
         ? { allowUnsignedLauncherLocalDev: true, allowExternalBrokerClientLocalDev: true }
         : {}),
     });
