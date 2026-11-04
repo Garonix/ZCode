@@ -14,6 +14,15 @@ export declare function isCuaLocalDevelopmentRuntime(
   compiledLocalDevelopmentRuntime?: boolean,
 ): boolean;
 
+/** 本次构建是否使用「自签名 Helper + 证书指纹固定」的信任模型。 */
+export declare function isCuaSelfSignedHelperTrustEnabled(): boolean;
+
+/** 构建期折叠的 Helper 签名证书 SHA-256（空串表示走官方 TeamIdentifier 校验）。 */
+export declare function resolveExpectedCuaHelperCertificateSha256(
+  env?: NodeJS.ProcessEnv,
+  embeddedCertificateSha256?: string,
+): string | null;
+
 export interface HelperPermissionSubjectIdentity {
   appPath: string;
   executablePath: string;

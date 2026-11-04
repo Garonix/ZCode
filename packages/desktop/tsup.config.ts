@@ -189,6 +189,17 @@ export function applyDesktopTsupEsbuildSecurityOptions(options: DesktopTsupEsbui
 
 const desktopTsupBundleSecurityOptions = resolveDesktopTsupBundleSecurityOptions();
 
+// Helper 的 build id 与签名证书指纹只能来自实际随包产物（prepare-macos-cua-helper.mjs 写入的
+// bundled-cua-helper/signing.json），不能用源码常量兜底：写死过一次占位 build id，正式包的
+// Helper 安装就被 fail-closed 拦下，CUA 永远 broker_not_accepting。
+const { resolveCuaHelperBuildIdentity } = await import(
+  pathToFileURL(resolve(import.meta.dirname, "../../scripts/cua-helper-build-identity.mjs")).href
+);
+const cuaHelperBuildIdentity = resolveCuaHelperBuildIdentity({
+  repoRoot: resolve(import.meta.dirname, "../.."),
+  env: process.env,
+});
+
 function createSharedDefines() {
   return {
     __ZCODE_VERSION__: JSON.stringify(buildMetadata.appVersion),
@@ -198,12 +209,12 @@ function createSharedDefines() {
     __ZCODE_ENV__: JSON.stringify(zcodeEnv),
     __ZCODE_PRODUCT_FLAVOR__: JSON.stringify(zcodeProductFlavor),
     ...buildTimeConfigDefines,
-    // Computer Use Helper build identity — helperInstaller 读它决定下载哪个 Helper bundle。
+    // Computer Use Helper build identity — helperInstaller 读它校验随包 Helper。
     // 缺失时 installer 抛 "Packaged ZCode is missing its embedded Computer Use Helper build identity"。
-    // CI 构建时通过 ZCODE_CUA_HELPER_BUILD_ID env 注入；dev 为空串走兜底（dev helper 不走下载）。
-    __ZCODE_CUA_HELPER_BUILD_ID__: JSON.stringify(
-      process.env.ZCODE_CUA_HELPER_BUILD_ID?.trim() ?? "",
-    ),
+    __ZCODE_CUA_HELPER_BUILD_ID__: JSON.stringify(cuaHelperBuildIdentity.buildId),
+    // 自签名信任模型：构建期把 Helper 签名证书的 SHA-256 折叠进来做证书 pinning。
+    // 空串表示走官方 Apple TeamIdentifier 校验（本仓库没有 Apple Developer ID，正式包恒为自签名）。
+    __ZCODE_CUA_HELPER_CERT_SHA256__: JSON.stringify(cuaHelperBuildIdentity.certificateSha256),
     // Bugfix: remote runtime CDN 根之前硬编码在 main bundle 里，OSS/CDN 切换必须改代码。
     // 这里改成构建期从 CI 的 CDN_DOMAIN/OSS_PATH_PREFIX 注入；没有配置时保留旧默认。
     __ZCODE_REMOTE_CDN_RELEASE_ROOTS__: JSON.stringify(resolveBuildRemoteCdnReleaseRoots(env)),
