@@ -65,7 +65,7 @@ function readCertificateSha256(appPath) {
   try {
     const prefix = join(directory, "cert");
     try {
-      run("/usr/bin/codesign", ["-d", "--extract-certificates", prefix, appPath]);
+      run("/usr/bin/codesign", ["-d", `--extract-certificates=${prefix}`, appPath]);
     } catch (error) {
       if (!existsSync(`${prefix}0`)) throw error;
     }
