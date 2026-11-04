@@ -13,21 +13,21 @@ P12_PASSWORD="${2:-${ZCODE_CUA_HELPER_SIGNING_CERT_PASSWORD:-}}"
 KEYCHAIN_PASSWORD="${ZCODE_CUA_HELPER_KEYCHAIN_PASSWORD:-zcode-cua-helper-keychain}"
 KEYCHAIN_PATH="$HOME/Library/Keychains/zcode-cua-helper.keychain-db"
 
-if [ -z "$P12_PATH" ] || [ ! -f "$P12_PATH" ]; then
-  echo "[import-cua-helper-signing-identity] 用法：$0 <p12 路径> <密码>" >&2
-  exit 1
-fi
-if [ -z "$P12_PASSWORD" ]; then
-  echo "[import-cua-helper-signing-identity] 缺少 p12 密码" >&2
-  exit 1
-fi
-
-# CI 会把 p12 以 base64 放进环境变量，这里统一落成临时文件，避免命令行泄露私钥内容。
-# 用 openssl 解码而不是 base64：macOS 自带的是 BSD base64，不认 GNU 的 --decode。
+# CI 会把 p12 以 base64 放进环境变量，这里先落成临时文件，避免命令行泄露私钥内容；
+# 本机调用则直接传 p12 路径。用 openssl 解码而不是 base64：macOS 自带 BSD base64，不认 --decode。
 if [ -n "${ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64:-}" ]; then
   P12_PATH="$(mktemp -t zcode-cua-helper-p12).p12"
   printf '%s' "$ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64" \
     | openssl base64 -d -A -out "$P12_PATH"
+fi
+
+if [ -z "$P12_PATH" ] || [ ! -f "$P12_PATH" ]; then
+  echo "[import-cua-helper-signing-identity] 用法：$0 <p12 路径> <密码>（或设置 ZCODE_CUA_HELPER_SIGNING_CERT_P12_BASE64）" >&2
+  exit 1
+fi
+if [ -z "$P12_PASSWORD" ]; then
+  echo "[import-cua-helper-signing-identity] 缺少 p12 密码（ZCODE_CUA_HELPER_SIGNING_CERT_PASSWORD）" >&2
+  exit 1
 fi
 
 echo "[import-cua-helper-signing-identity] 创建 keychain：$KEYCHAIN_PATH"
