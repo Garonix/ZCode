@@ -84,7 +84,6 @@ export const buildNodeReplHostBundle = async ({
       );
     }
   }
-<<<<<<< HEAD
   // 修复原因：官方插件 seed 按版本复用缓存，而 server.js 的 build id 每条流水线都变、版本号不变。
   // 写出构建身份文件，供 bootstrap 的 buildIdentityPath 比较，桌面升级后才会重新 seed。
   // 写在 outfile 所在 dist 根目录（默认 dist/build-identity.json），测试的临时输出不会改写真实 dist。
@@ -92,10 +91,7 @@ export const buildNodeReplHostBundle = async ({
     resolve(dirname(outfile), "..", "build-identity.json"),
     `${JSON.stringify({ cuaHelperBuildId })}\n`,
   );
-  return { outfile, cuaHelperBuildId };
-=======
   return { outfile, cuaHelperBuildId, cuaHelperCertificateSha256 };
->>>>>>> bbef93c2 (fix(cua): 修复 macOS Helper 签名被补丁破坏导致启动即被 SIGKILL)
 };
 
 // 这里原先写成 `file://${process.argv[1]}`。
