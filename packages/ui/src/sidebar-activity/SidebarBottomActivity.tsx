@@ -12,14 +12,20 @@ import { ZCODE_PURE_EDITION } from "@zcode/shared";
  * 才在同一槽位显示 highspeed 分享卡。优先级：领 token banner > highspeed 全局通知。
  * 两者都不可见时 GlobalNoticeSurface 返回 null，槽位不产生多余 DOM。
  */
-export function SidebarBottomActivity({
-  noticeStore,
-}: {
+export function SidebarBottomActivity(props: {
   noticeStore?: GlobalNoticeStore | null;
 } = {}) {
   if (ZCODE_PURE_EDITION) {
     return null;
   }
+  return <SidebarBottomActivityInner {...props} />;
+}
+
+function SidebarBottomActivityInner({
+  noticeStore,
+}: {
+  noticeStore?: GlobalNoticeStore | null;
+}) {
   const bannerVisible = useMarketingBannerVisible();
   if (bannerVisible) return <MarketingBanner />;
   // 未注入时走 GlobalNoticeSurface 默认的 browserGlobalNoticeStore。

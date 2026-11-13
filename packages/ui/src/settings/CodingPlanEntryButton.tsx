@@ -18,16 +18,22 @@ export function useCodingPlanEntryGate() {
 }
 
 /** 各入口共享同一查询状态；纯净版时直接返回 null，不渲染任何付费升级入口。 */
-export function CodingPlanEntryButton({
+export function CodingPlanEntryButton(
+  props: ComponentProps<typeof Button> & { bypassGate?: boolean },
+) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
+  return <CodingPlanEntryButtonInner {...props} />;
+}
+
+function CodingPlanEntryButtonInner({
   children,
   disabled,
   onClick,
   bypassGate = false,
   ...props
 }: ComponentProps<typeof Button> & { bypassGate?: boolean }) {
-  if (ZCODE_PURE_EDITION) {
-    return null;
-  }
   const gate = useCodingPlanEntryGate();
   const status = bypassGate ? "ready" : gate.status;
   return (

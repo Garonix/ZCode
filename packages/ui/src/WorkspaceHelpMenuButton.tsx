@@ -37,10 +37,7 @@ import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { createHelpMenuActionHandlers } from "@/lib/helpMenuActions.js";
 import { toast } from "@/components/ui/toast.js";
 
-export function WorkspaceHelpMenuButton({
-  className,
-  isDesktop = false,
-}: {
+export function WorkspaceHelpMenuButton(props: {
   className?: string;
   /**
    * 是否桌面端。由挂载处注入而不是在组件内嗅探：Web 的 IPlatformService 桩同样实现了
@@ -51,6 +48,16 @@ export function WorkspaceHelpMenuButton({
   if (ZCODE_PURE_EDITION) {
     return null;
   }
+  return <WorkspaceHelpMenuButtonInner {...props} />;
+}
+
+function WorkspaceHelpMenuButtonInner({
+  className,
+  isDesktop = false,
+}: {
+  className?: string;
+  isDesktop?: boolean;
+}) {
   const { intl } = useZCodeIntl();
   const platform = usePlatform();
   const [open, setOpen] = useState(false);

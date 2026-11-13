@@ -417,7 +417,21 @@ export type WorkspaceSidebarFooterUsageSummaryState = ReturnType<
   typeof useWorkspaceSidebarFooterUsageSummaryState
 >;
 
-export function WorkspaceSidebarFooterUsageSummaryContent({
+export function WorkspaceSidebarFooterUsageSummaryContent(props: {
+  state: WorkspaceSidebarFooterUsageSummaryState;
+  onUsageClick?: () => void;
+  onUpgradeClick?: (
+    providerId: SidebarUsageCodingPlanProviderId,
+    funnelContext: CodingPlanFunnelContext,
+  ) => void;
+}) {
+  if (ZCODE_PURE_EDITION) {
+    return null;
+  }
+  return <WorkspaceSidebarFooterUsageSummaryContentInner {...props} />;
+}
+
+function WorkspaceSidebarFooterUsageSummaryContentInner({
   state,
   onUsageClick,
   onUpgradeClick,
@@ -429,9 +443,6 @@ export function WorkspaceSidebarFooterUsageSummaryContent({
     funnelContext: CodingPlanFunnelContext,
   ) => void;
 }) {
-  if (ZCODE_PURE_EDITION) {
-    return null;
-  }
   const { intl } = useZCodeIntl();
   const entryGate = useCodingPlanEntryGate();
   const { providerEntitlements, upgradeTargetProviderId } = state;
@@ -486,14 +497,20 @@ export function WorkspaceSidebarFooterUsageSummaryContent({
   );
 }
 
-export function WorkspaceSidebarFooterPlanBadge({
-  state,
-}: {
+export function WorkspaceSidebarFooterPlanBadge(props: {
   state: WorkspaceSidebarFooterUsageSummaryState;
 }) {
   if (ZCODE_PURE_EDITION) {
     return null;
   }
+  return <WorkspaceSidebarFooterPlanBadgeInner {...props} />;
+}
+
+function WorkspaceSidebarFooterPlanBadgeInner({
+  state,
+}: {
+  state: WorkspaceSidebarFooterUsageSummaryState;
+}) {
   const { intl } = useZCodeIntl();
   const label =
     state.profilePlanBadge?.audience === "team"

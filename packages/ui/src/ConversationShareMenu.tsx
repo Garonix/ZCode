@@ -7,16 +7,23 @@ import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useConversationShareSelectionStore } from "@/store/conversationShareSelectionStore.js";
 import { WINDOWS_CAPTION_CONTROL_CLASS } from "@/windowCaptionControls.js";
 
-export function ConversationShareMenu({
-  taskId,
-  useWindowsCaptionSpacing = false,
-}: {
+export function ConversationShareMenu(props: {
   taskId: string;
   useWindowsCaptionSpacing?: boolean;
 }) {
   if (ZCODE_PURE_EDITION) {
     return null;
   }
+  return <ConversationShareMenuInner {...props} />;
+}
+
+function ConversationShareMenuInner({
+  taskId,
+  useWindowsCaptionSpacing = false,
+}: {
+  taskId: string;
+  useWindowsCaptionSpacing?: boolean;
+}) {
   const { intl } = useZCodeIntl();
   const openShare = useConversationShareSelectionStore((state) => state.openShare);
   const closeShare = useConversationShareSelectionStore((state) => state.closeShare);

@@ -136,7 +136,8 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
 }) {
   const { intl } = useZCodeIntl();
   const platform = usePlatform();
-  const openRewards = ZCODE_PURE_EDITION ? null : useOpenRewards();
+  const rawOpenRewards = useOpenRewards();
+  const openRewards = ZCODE_PURE_EDITION ? null : rawOpenRewards;
   const interfaceMode = useZCodeStore((state) => state.interfaceMode);
   const setInterfaceMode = useSetInterfaceModeWithTelemetry(platform, "app.profile");
   const zoomInShortcutLabel = useShortcutCommandLabel("zoomIn");
