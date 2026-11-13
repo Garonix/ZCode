@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -76,19 +77,72 @@ export async function isRuntimeHostReady(outputDir, arch) {
 
 export async function buildRuntimeHost({ arch, outputDir }) {
   const plan = resolveRuntimeHostBuild(arch);
-  const work = await mkdtemp(join(tmpdir(), "zcode-runtime-host-"));
+  let work = await mkdtemp(join(tmpdir(), "zcode-runtime-host-"));
   try {
-    await run(["-S", source, "-B", work, ...plan.configureArgs, "-DCMAKE_BUILD_TYPE=Release"]);
-    await run([
+    const extraArgs = [];
+    if (process.platform === "win32" && process.env.VSINSTALLDIR) {
+      extraArgs.push(
+        `-DCMAKE_GENERATOR_INSTANCE=${process.env.VSINSTALLDIR.replace(/\\/g, "/").replace(/\/+$/, "")}`,
+      );
+    }
+    let configuredWithNinja = false;
+    try {
+      await run([
+        "-S",
+        source,
+        "-B",
+        work,
+        ...plan.configureArgs,
+        ...extraArgs,
+        "-DCMAKE_BUILD_TYPE=Release",
+      ]);
+    } catch (configureError) {
+      if (process.platform === "win32") {
+        console.warn(
+          "[runtime-host] Visual Studio 生成器失败，正在尝试清理缓存并回退至 Ninja 生成器...",
+          configureError,
+        );
+        await rm(work, { recursive: true, force: true });
+        work = await mkdtemp(join(tmpdir(), "zcode-runtime-host-"));
+        try {
+          await run(["-S", source, "-B", work, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"]);
+          configuredWithNinja = true;
+        } catch (ninjaError) {
+          console.warn("[runtime-host] Ninja 生成器回退失败，尝试 CMake 默认生成器...", ninjaError);
+          await rm(work, { recursive: true, force: true });
+          work = await mkdtemp(join(tmpdir(), "zcode-runtime-host-"));
+          await run(["-S", source, "-B", work, "-DCMAKE_BUILD_TYPE=Release"]);
+        }
+      } else {
+        throw configureError;
+      }
+    }
+    const buildArgs = [
       "--build",
       work,
-      "--config",
-      "Release",
       "--target",
       "zcode-runtime-host",
       "zcode-installer-process-helper",
-    ]);
-    const releaseDir = join(work, ...(process.platform === "win32" ? ["Release"] : []));
+    ];
+    if (configuredWithNinja) {
+      await run(buildArgs);
+    } else {
+      try {
+        await run([...buildArgs, "--config", "Release"]);
+      } catch {
+        await run(buildArgs);
+      }
+    }
+    let releaseDir = join(
+      work,
+      ...(process.platform === "win32" && !configuredWithNinja ? ["Release"] : []),
+    );
+    if (
+      !existsSync(join(releaseDir, "zcode-runtime-host.exe")) &&
+      existsSync(join(work, "zcode-runtime-host.exe"))
+    ) {
+      releaseDir = work;
+    }
     const hostBytes = await readFile(join(releaseDir, "zcode-runtime-host.exe"));
     const helperBytes = await readFile(join(releaseDir, "zcode-installer-process-helper.exe"));
     verifyRuntimeHostPe(hostBytes, arch);
